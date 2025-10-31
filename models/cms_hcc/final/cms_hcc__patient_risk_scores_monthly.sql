@@ -13,6 +13,20 @@ with seed_adjustment_rates as (
 
 )
 
+, seed_adjustment_meta as (
+    /*
+        Clamp payment_year for normalization/MA coding adjustment factors
+        to the nearest available year. Use case: allow scoring for payment
+        years before CMS publishes the new adjustment table by using the
+        earliest if below range and the latest if above.
+    */
+    select
+          min(payment_year) as min_payment_year
+        , max(payment_year) as max_payment_year
+    from seed_adjustment_rates
+
+)
+
 , risk_factors as (
 
     select
@@ -28,16 +42,15 @@ with seed_adjustment_rates as (
 
 , member_months as (
 
-    select
-        person_id
-        , cast({{ substring('year_month', 1, 4) }} as integer) as eligible_year
-        , count(1) as member_months
-    from {{ ref('cms_hcc__stg_core__member_months') }}
-    group by
-        person_id
-        , cast({{ substring('year_month', 1, 4) }} as integer)
+    /* Monthly membership flag: 1 when member in that specific month */
+    select distinct
+        mm.person_id
+        , cast(cal.last_day_of_month as date) as collection_end_date
+        , 1 as member_months
+    from {{ ref('cms_hcc__stg_core__member_months') }} mm
+    inner join {{ ref('reference_data__calendar') }} cal
+        on cast(cal.year_month_int as {{ dbt.type_string() }}) = cast(mm.year_month as {{ dbt.type_string() }})
 )
-
 , raw_score as (
 
     select
@@ -142,8 +155,13 @@ with seed_adjustment_rates as (
         , blended.collection_start_date
         , blended.collection_end_date
     from blended
+        left outer join seed_adjustment_meta on 1=1
         left outer join seed_adjustment_rates
-            on blended.payment_year = seed_adjustment_rates.payment_year
+            on seed_adjustment_rates.payment_year = case
+                when blended.payment_year < seed_adjustment_meta.min_payment_year then seed_adjustment_meta.min_payment_year
+                when blended.payment_year > seed_adjustment_meta.max_payment_year then seed_adjustment_meta.max_payment_year
+                else blended.payment_year
+            end
 
 )
 
@@ -160,12 +178,19 @@ with seed_adjustment_rates as (
         , normalized.collection_start_date
         , normalized.collection_end_date
     from normalized
+        left outer join seed_adjustment_meta on 1=1
         left outer join seed_adjustment_rates
-            on normalized.payment_year = seed_adjustment_rates.payment_year
+            on seed_adjustment_rates.payment_year = case
+                when normalized.payment_year < seed_adjustment_meta.min_payment_year then seed_adjustment_meta.min_payment_year
+                when normalized.payment_year > seed_adjustment_meta.max_payment_year then seed_adjustment_meta.max_payment_year
+                else normalized.payment_year
+            end
 
 )
 
-, weighted_score as (
+
+
+, weighted_base as (
 
     select
         payment.person_id
@@ -174,15 +199,31 @@ with seed_adjustment_rates as (
         , payment.blended_risk_score
         , payment.normalized_risk_score
         , payment.payment_risk_score
-        , member_months.member_months
-        , payment.payment_risk_score * member_months.member_months as payment_risk_score_weighted_by_months
+        , member_months.member_months as member_months
         , payment.payment_year
         , payment.collection_start_date
         , payment.collection_end_date
     from payment
     left outer join member_months
             on payment.person_id = member_months.person_id
-            and payment.payment_year = member_months.eligible_year
+            and payment.collection_end_date = member_months.collection_end_date
+)
+
+, weighted_score as (
+
+    select
+        wb.person_id
+        , wb.v24_risk_score
+        , wb.v28_risk_score
+        , wb.blended_risk_score
+        , wb.normalized_risk_score
+        , wb.payment_risk_score
+        , coalesce(wb.member_months, 0) as member_months
+        , wb.payment_risk_score * coalesce(wb.member_months, 0) as payment_risk_score_weighted_by_months
+        , wb.payment_year
+        , wb.collection_start_date
+        , wb.collection_end_date
+    from weighted_base as wb
 )
 
 , add_data_types as (

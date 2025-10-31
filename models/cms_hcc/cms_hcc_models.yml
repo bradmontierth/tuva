@@ -28,6 +28,20 @@ models:
     columns:
       - name: person_id
         description: Unique ID for the patient.
+      - name: demographic_enrollment_status
+        description: Demographic enrollment status (New vs Continuing) for the period.
+      - name: demographic_gender
+        description: Gender used for demographic factor selection.
+      - name: demographic_age_group
+        description: Age group used for demographic factor selection.
+      - name: demographic_medicaid_status
+        description: Medicaid status used for demographic factor selection.
+      - name: demographic_dual_status
+        description: Dual eligibility status used for demographic factor selection.
+      - name: demographic_orec
+        description: Original reason for entitlement used for demographic factor selection.
+      - name: demographic_institutional_status
+        description: Institutional status used for demographic factor selection.
       - name: enrollment_status_default
         description: >
           Indicates the input data was missing and a default status was used.
@@ -40,8 +54,17 @@ models:
       - name: institutional_status_default
         description: >
           Indicates the input data was missing and a default status was used.
-      - name: risk_factor_description
-        description: Description of the risk factor.
+      - name: eligibility_imputed
+        description: >
+          True when eligibility-derived attributes (Medicaid/Dual/OREC/Institutional)
+          were imputed from the nearest available eligibility month rather than
+          sourced from eligibility for the current month.
+      - name: risk_factor_key
+        description: >
+          Deterministic key identifying the specific risk factor instance.
+          Pattern varies by factor_type (e.g., DEM| for demographic; Disease
+          includes HCC code and demographic dimensions; interactions include
+          relevant dimensions and codes).
       - name: coefficient
         description: >
           Relative factor value that correspond to the CMS HCC model's 
@@ -71,6 +94,20 @@ models:
     columns:
       - name: person_id
         description: Unique ID for the patient.
+      - name: demographic_enrollment_status
+        description: Demographic enrollment status (New vs Continuing) for the collection period.
+      - name: demographic_gender
+        description: Gender used for demographic factor selection.
+      - name: demographic_age_group
+        description: Age group used for demographic factor selection.
+      - name: demographic_medicaid_status
+        description: Medicaid status used for demographic factor selection.
+      - name: demographic_dual_status
+        description: Dual eligibility status used for demographic factor selection.
+      - name: demographic_orec
+        description: Original reason for entitlement used for demographic factor selection.
+      - name: demographic_institutional_status
+        description: Institutional status used for demographic factor selection.
       - name: enrollment_status_default
         description: >
           Indicates the input data was missing and a default status was used.
@@ -83,8 +120,15 @@ models:
       - name: institutional_status_default
         description: >
           Indicates the input data was missing and a default status was used.
-      - name: risk_factor_description
-        description: Description of the risk factor.
+      - name: eligibility_imputed
+        description: >
+          True when eligibility-derived attributes (Medicaid/Dual/OREC/Institutional)
+          were imputed from the nearest available eligibility month rather than
+          sourced from eligibility for the current month.
+      - name: risk_factor_key
+        description: >
+          Deterministic key identifying the specific risk factor instance for
+          the collection period. Pattern varies by factor_type.
       - name: coefficient
         description: >
           Relative factor value that correspond to the CMS HCC model's 
@@ -103,6 +147,49 @@ models:
       - name: collection_end_date
         description: >
           The end date for the collection period the HCC and risk scores are being calculated for.
+      - name: tuva_last_run
+        description: The date the model was run.
+
+  - name: cms_hcc__dim_demographic_key
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_cms_hcc{% else %}cms_hcc{%- endif -%}
+      alias: dim_demographic_key
+      tags: cms_hcc
+      materialized: table
+    description: >
+      Dimension table containing one row per demographic cell in the CMS HCC
+      demographic factors seed, with a deterministic key and coefficient.
+    tests: []
+    columns:
+      - name: demographic_key
+        description: Deterministic key built from demographic attribute values.
+        tests:
+          - not_null
+          - unique
+      - name: risk_factor_key
+        description: >
+          Key aligned to fact tables for demographic rows (prefixed 'DEM|').
+      - name: model_version
+        description: CMS HCC model version.
+      - name: factor_type
+        description: Should be 'Demographic'.
+      - name: demographic_enrollment_status
+        description: Demographic enrollment status (New vs Continuing).
+      - name: demographic_gender
+        description: Gender dimension value.
+      - name: demographic_age_group
+        description: Age group dimension value.
+      - name: demographic_medicaid_status
+        description: Medicaid status dimension value.
+      - name: demographic_dual_status
+        description: Dual status dimension value.
+      - name: demographic_orec
+        description: OREC dimension value.
+      - name: demographic_institutional_status
+        description: Institutional status dimension value.
+      - name: coefficient
+        description: Coefficient for the demographic factor.
       - name: tuva_last_run
         description: The date the model was run.
 
@@ -146,11 +233,11 @@ models:
           and payment year's rate announcement from CMS.
       - name: payment_risk_score_weighted_by_months
         description: >
-          Payment risk score multiplied by member_months.
+          Payment risk score multiplied by member_months used for weighting.
       - name: member_months
         description: >
-          Member months derived from the finanicial_pmpm mart utilizing 
-          payment year eligibility.
+          Months used for weighting derived from the financial_pmpm mart
+          using payment year attribution (plan/ACO membership).
       - name: payment_year
         description: >
           The payment year the HCC and risk scores are being calculated for.
@@ -204,8 +291,7 @@ models:
           Payment risk score multiplied by member_months.
       - name: member_months
         description: >
-          Member months derived from the finanicial_pmpm mart utilizing 
-          payment year eligibility.
+          1 if the person is attributed in that collection month, else 0
       - name: payment_year
         description: >
           The payment year the HCC and risk scores are being calculated for.

@@ -3,5 +3,11 @@
  | as_bool
    )
 }}
-select *
-from {{ ref('eligibility') }}
+with src as (
+  select *
+  from {{ ref('eligibility') }}
+)
+select
+  src.*
+  {{ ensure_optional_column(ref('eligibility'), 'medicare_part_b_enrollment_start_date', 'date') }}
+from src
