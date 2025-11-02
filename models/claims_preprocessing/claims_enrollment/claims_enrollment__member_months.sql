@@ -43,6 +43,18 @@ inner join month_start_and_end_dates as b
   and a.enrollment_end_date >= b.month_start_date
 )
 
+, deduped as (
+  select distinct
+    person_id
+    , member_id
+    , year_month
+    , payer
+    , {{ quote_column('plan') }}
+    , data_source
+    , tuva_last_run
+  from joined
+)
+
 select
   row_number() over (
     order by
@@ -53,4 +65,4 @@ select
     , data_source
     ) as member_month_key
 , *
-from joined
+from deduped
