@@ -2,6 +2,12 @@
     enabled = var('clinical_enabled', False)
 ) }}
 
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
 select
       m.data_source
     , coalesce(m.encounter_start_date,cast('1900-01-01' as date)) as source_date
@@ -19,4 +25,7 @@ select
     , cast(primary_diagnosis_code as {{ dbt.type_string() }}) as field_value
     , '{{ var('tuva_last_run') }}' as tuva_last_run
 from {{ ref('encounter') }} as m
-left outer join {{ ref('terminology__icd_10_cm') }} as term on m.primary_diagnosis_code = term.icd_10_cm
+cross join icd10_release_year as i10ry
+left outer join {{ ref('terminology__icd_10_cm_scd') }} as term
+    on m.primary_diagnosis_code = term.icd_10_cm
+    and {{ apply_icd10_valid_date_filter("m.encounter_start_date", 'term', 'i10ry') }}

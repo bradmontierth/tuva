@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: lakehouse_terminology
+    description: 'Delta tables curated in the Fabric lakehouse workspace.'
+    database: phds_lakehouse_test
+    schema: dbo
+    tables:
+      - name: terminology__icd_10_cm_scd
+        description: 'Slowly changing dimension of ICD-10-CM codes sourced from the Fabric lakehouse.'

@@ -5,6 +5,12 @@
 }}
 
 {% if var('enable_normalize_engine',false) != true %}
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
 select
       obs.observation_id
     , obs.person_id
@@ -70,9 +76,11 @@ select
     , obs.data_source
     , obs.tuva_last_run
 from {{ ref('core__stg_clinical_observation') }} as obs
-left outer join {{ ref('terminology__icd_10_cm') }} as icd10cm
+cross join icd10_release_year as i10ry
+left outer join {{ ref('terminology__icd_10_cm_scd') }} as icd10cm
     on obs.source_code_type = 'icd-10-cm'
         and replace(obs.source_code, '.', '') = icd10cm.icd_10_cm
+        and {{ apply_icd10_valid_date_filter("obs.observation_date", 'icd10cm', 'i10ry') }}
 left outer join {{ ref('terminology__icd_9_cm') }} as icd9cm
     on obs.source_code_type = 'icd-9-cm'
         and replace(obs.source_code, '.', '') = icd9cm.icd_9_cm
@@ -95,6 +103,12 @@ left outer join {{ ref('terminology__observation_type') }} as ot
     on lower(obs.observation_type) = ot.observation_type
 
 {% else %}
+
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
 
 select
       obs.observation_id
@@ -165,9 +179,11 @@ select
     , obs.data_source
     , obs.tuva_last_run
 from {{ ref('core__stg_clinical_observation') }} obs
-left join {{ ref('terminology__icd_10_cm') }} icd10cm
+cross join icd10_release_year as i10ry
+left join {{ ref('terminology__icd_10_cm_scd') }} icd10cm
     on obs.source_code_type = 'icd-10-cm'
         and replace(obs.source_code,'.','') = icd10cm.icd_10_cm
+        and {{ apply_icd10_valid_date_filter("obs.observation_date", 'icd10cm', 'i10ry') }}
 left join {{ ref('terminology__icd_9_cm') }} icd9cm
     on obs.source_code_type = 'icd-9-cm'
         and replace(obs.source_code,'.','') = icd9cm.icd_9_cm

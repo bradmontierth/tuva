@@ -1,0 +1,9 @@
+version: 2
+models:
+  - name: data_quality__base_head_compare
+    description: Random 10k distinct person_ids from eligibility.
+    config:
+      schema: data_quality
+      materialized: table
+      tags: comparison
+      alias: base_head_compare

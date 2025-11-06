@@ -2,7 +2,13 @@
      enabled = (var('enable_legacy_data_quality', False) and var('claims_enabled', var('tuva_marts_enabled', False))) | as_bool
 )}}
 
-with unpivot_diagnosis as(
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
+, unpivot_diagnosis as(
         {{ dbt_utils.unpivot(
         relation=ref('medical_claim'),
         cast_to=type_string(),
@@ -303,6 +309,13 @@ with unpivot_diagnosis as(
     from {{ ref('input_layer__medical_claim') }} m
     where diagnosis_code_1 is null
 )
+, claim_dates as(
+    select
+        claim_id
+        , min(claim_start_date) as claim_start_date
+    from {{ ref('medical_claim') }}
+    group by claim_id
+)
 , invalid_primary_dx as(
     select
         data_quality_check
@@ -322,8 +335,11 @@ with unpivot_diagnosis as(
             else 0
         end as invalid_diagnosis
     from unpivot_diagnosis dx
-    left join {{ ref('terminology__icd_10_cm') }} icd10
+    cross join icd10_release_year as i10ry
+    left join claim_dates cd on dx.claim_id = cd.claim_id
+    left join {{ ref('terminology__icd_10_cm_scd') }} icd10
         on dx.diagnosis_code = icd10.icd_10_cm
+        and {{ apply_icd10_valid_date_filter(try_to_cast_date('cd.claim_start_date', 'YYYY-MM-DD'), 'icd10', 'i10ry') }}
     left join {{ ref('terminology__icd_9_cm') }} icd9
         on dx.diagnosis_code = icd9.icd_9_cm
     where diagnosis_column = 'DIAGNOSIS_CODE_1'
@@ -365,8 +381,11 @@ with unpivot_diagnosis as(
             else 0
         end as invalid_diagnosis
     from unpivot_diagnosis dx
-    left join {{ ref('terminology__icd_10_cm') }} icd10
+    cross join icd10_release_year as i10ry
+    left join claim_dates cd on dx.claim_id = cd.claim_id
+    left join {{ ref('terminology__icd_10_cm_scd') }} icd10
         on dx.diagnosis_code = icd10.icd_10_cm
+        and {{ apply_icd10_valid_date_filter(try_to_cast_date('cd.claim_start_date', 'YYYY-MM-DD'), 'icd10', 'i10ry') }}
     left join {{ ref('terminology__icd_9_cm') }} icd9
     on dx.diagnosis_code = icd9.icd_9_cm
     where diagnosis_column <> 'DIAGNOSIS_CODE_1'

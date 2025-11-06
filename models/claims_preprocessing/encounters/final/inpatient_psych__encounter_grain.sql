@@ -3,7 +3,13 @@
    )
 }}
 
-with detail_values as (
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
+, detail_values as (
     select stg.*
     , cli.encounter_id
     , cli.old_encounter_id
@@ -157,6 +163,7 @@ from {{ ref('inpatient_psych__start_end_dates') }} as a
 inner join encounter_cross_walk as x on a.encounter_id = x.old_encounter_id
 inner join total_amounts as tot on x.encounter_id = tot.encounter_id
 inner join service_category_flags as sc on x.encounter_id = sc.encounter_id
+cross join icd10_release_year as i10ry
 left outer join institutional_claim_details as c
   on x.encounter_id = c.encounter_id
 left outer join patient as e
@@ -175,9 +182,10 @@ left outer join {{ ref('terminology__ms_drg') }} as msdrg
 left outer join {{ ref('terminology__apr_drg') }} as aprdrg
   on c.drg_code_type = 'apr-drg'
   and c.drg_code = aprdrg.apr_drg_code
-left outer join {{ ref('terminology__icd_10_cm') }} as icd10cm
+left outer join {{ ref('terminology__icd_10_cm_scd') }} as icd10cm
   on c.diagnosis_code_1 = icd10cm.icd_10_cm
   and c.diagnosis_code_type = 'icd-10-cm'
+  and {{ apply_icd10_valid_date_filter("coalesce(a.encounter_start_date, a.encounter_end_date)", 'icd10cm', 'i10ry') }}
 left outer join {{ ref('terminology__icd_9_cm') }} as icd9cm
   on c.diagnosis_code_1 = icd9cm.icd_9_cm
   and c.diagnosis_code_type = 'icd-9-cm'

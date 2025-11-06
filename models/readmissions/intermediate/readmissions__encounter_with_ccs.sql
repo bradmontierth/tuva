@@ -8,6 +8,11 @@
 -- The CCS diagnosis category is found using
 -- the encounter's primary diagnosis code.
 
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
 
 select
     aa.encounter_id
@@ -32,7 +37,9 @@ select
 
 from
     {{ ref('readmissions__encounter') }} as aa
-    left outer join {{ ref('terminology__icd_10_cm') }} as bb
+    cross join icd10_release_year as i10ry
+    left outer join {{ ref('terminology__icd_10_cm_scd') }} as bb
     on aa.primary_diagnosis_code = bb.icd_10_cm
+    and {{ apply_icd10_valid_date_filter("coalesce(aa.admit_date, aa.discharge_date)", 'bb', 'i10ry') }}
     left outer join {{ ref('readmissions__icd_10_cm_to_ccs') }} as cc
     on aa.primary_diagnosis_code = cc.icd_10_cm

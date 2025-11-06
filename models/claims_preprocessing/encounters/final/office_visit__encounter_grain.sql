@@ -5,7 +5,13 @@
 
 
 
- with patient as (
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
+, patient as (
     select
         patient_data_source_id
         , birth_date
@@ -143,6 +149,7 @@ select d.encounter_id
 from {{ ref('office_visits__int_detail_values') }} as d
 inner join total_amounts as tot on d.encounter_id = tot.encounter_id
 inner join service_category_flags as sc on d.encounter_id = sc.encounter_id
+cross join icd10_release_year as i10ry
 left outer join highest_paid_diagnosis as hp on d.encounter_id = hp.encounter_id
 and
 hp.paid_order = 1
@@ -161,9 +168,10 @@ left outer join {{ ref('terminology__provider') }} as b
   on hf.facility_id = b.npi
 left outer join {{ ref('terminology__provider') }} as b2
   on phy.billing_id = b2.npi
-left outer join {{ ref('terminology__icd_10_cm') }} as icd10cm
+left outer join {{ ref('terminology__icd_10_cm_scd') }} as icd10cm
   on hp.diagnosis_code_1 = icd10cm.icd_10_cm
   and hp.diagnosis_code_type = 'icd-10-cm'
+  and {{ apply_icd10_valid_date_filter("d.encounter_start_date", 'icd10cm', 'i10ry') }}
 left outer join {{ ref('terminology__icd_9_cm') }} as icd9cm
   on hp.diagnosis_code_1 = icd9cm.icd_9_cm
   and hp.diagnosis_code_type = 'icd-9-cm'

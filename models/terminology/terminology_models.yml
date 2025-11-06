@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: terminology__icd_10_cm_scd
+    description: 'Slowly changing dimension of ICD-10-CM codes and descriptions with validity periods loaded from the Fabric lakehouse.'
+    config:
+      tags:
+        - terminology
+    columns:
+      - name: sn
+        description: 'Sequential identifier assigned by the ICD-10-CM release.'
+      - name: icd_10_cm
+        description: 'Alpha-Numeric ICD-10-CM Code.'
+      - name: header_flag
+        description: 'Indicates a diagnosis "header" with a 1 and a billable code with a 0.'
+      - name: short_description
+        description: 'The short description of the ICD-10-CM code.'
+      - name: long_description
+        description: 'The long description of the ICD-10-CM code.'
+      - name: release_year
+        description: 'Release year associated with the ICD-10-CM update.'
+      - name: start_valid_date
+        description: 'Date the ICD-10-CM code becomes valid for use.'
+      - name: end_valid_date
+        description: 'Date the ICD-10-CM code is no longer valid for use.'

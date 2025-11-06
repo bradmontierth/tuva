@@ -29,5 +29,7 @@ __pycache__/
 .env
 .user.yml
 profiles.yml
+uv.lock
+pyproject.toml
 
 SQLFLUFF_LINTER_OUTPUT.TXT

@@ -7,7 +7,13 @@
 -- This dbt model creates the condition table in core.
 -- *************************************************
 
-with unpivot_cte as (
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
+, unpivot_cte as (
 
   {% for i in range(1, 26) %}
   select
@@ -73,12 +79,14 @@ select distinct
     , cast(unpivot_cte.data_source as {{ dbt.type_string() }}) as data_source
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
 from unpivot_cte
+cross join icd10_release_year as i10ry
 --inner join {{ ref('encounters__combined_claim_line_crosswalk') }} x on unpivot_cte.claim_id = x.claim_id
 --and
 --unpivot_cte.claim_line_number = x.claim_line_number
 --and
 --x.claim_line_attribution_number = 1
-left outer join {{ ref('terminology__icd_10_cm') }} as icd
+left outer join {{ ref('terminology__icd_10_cm_scd') }} as icd
     on unpivot_cte.source_code = icd.icd_10_cm
+    and {{ apply_icd10_valid_date_filter(try_to_cast_date('unpivot_cte.recorded_date', 'YYYY-MM-DD'), 'icd', 'i10ry') }}
 left outer join {{ ref('terminology__present_on_admission') }} as poa
     on unpivot_cte.present_on_admit_code = poa.present_on_admit_code

@@ -6,6 +6,12 @@
 
 {% if var('enable_normalize_engine',false) != true %}
 
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
 select
       appts.appointment_id
     , appts.person_id
@@ -94,20 +100,28 @@ select
     , appts.data_source
     , appts.tuva_last_run
 from {{ ref('core__stg_clinical_appointment') }} as appts
+    cross join icd10_release_year as i10ry
     left outer join {{ ref('terminology__appointment_cancellation_reason') }} as appointment_cancellation_reason
         on appts.source_cancellation_reason_code = appointment_cancellation_reason.code
     left outer join {{ ref('terminology__appointment_status') }} as appointment_status
         on appts.source_status = appointment_status.code
     left outer join {{ ref('terminology__appointment_type') }} as appointment_type
         on appts.source_appointment_type_code = appointment_type.code
-    left outer join {{ ref('terminology__icd_10_cm') }} as icd10
+    left outer join {{ ref('terminology__icd_10_cm_scd') }} as icd10
         on replace(appts.source_reason_code, '.', '') = icd10.icd_10_cm
+        and {{ apply_icd10_valid_date_filter(try_to_cast_date('appts.start_datetime', 'YYYY-MM-DD HH:MI:SS'), 'icd10', 'i10ry') }}
     left outer join {{ ref('terminology__icd_9_cm') }} as icd9
         on replace(appts.source_reason_code, '.', '') = icd9.icd_9_cm
     left outer join {{ ref('terminology__snomed_ct') }} as snomed_ct
         on appts.source_reason_code = snomed_ct.snomed_ct
 
- {% else %}
+{% else %}
+
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
 
 select
       appts.appointment_id
@@ -207,14 +221,16 @@ select
     , appts.data_source
     , appts.tuva_last_run
 from {{ ref('core__stg_clinical_appointment') }} as appts
+    cross join icd10_release_year as i10ry
     left outer join {{ ref('terminology__appointment_cancellation_reason') }} as appointment_cancellation_reason
         on appts.source_cancellation_reason_code = appointment_cancellation_reason.code
     left outer join {{ ref('terminology__appointment_status') }} as appointment_status
         on appts.source_status = appointment_status.code
     left outer join {{ ref('terminology__appointment_type') }} as appointment_type
         on appts.source_appointment_type_code = appointment_type.code
-    left outer join {{ ref('terminology__icd_10_cm') }} as icd10
+    left outer join {{ ref('terminology__icd_10_cm_scd') }} as icd10
         on replace(appts.source_reason_code, '.', '') = icd10.icd_10_cm
+        and {{ apply_icd10_valid_date_filter(try_to_cast_date('appts.start_datetime', 'YYYY-MM-DD HH:MI:SS'), 'icd10', 'i10ry') }}
     left outer join {{ ref('terminology__icd_9_cm') }} as icd9
         on replace(appts.source_reason_code, '.', '') = icd9.icd_9_cm
     left outer join {{ ref('terminology__snomed_ct') }} as snomed_ct

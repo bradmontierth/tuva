@@ -2,7 +2,13 @@
     enabled = var('claims_enabled', False)
 ) }}
 
-with base as (
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
+, base as (
     select *
     from {{ ref('medical_claim') }}
     where claim_type = 'institutional'
@@ -13,7 +19,10 @@ unique_field as (
         , {{ concat_custom(["diagnosis_code_1", "'|'", "coalesce(term.short_description, '')"]) }} as field
         , data_source
     from base
-    left outer join {{ ref('terminology__icd_10_cm') }} as term on base.diagnosis_code_1 = term.icd_10_cm
+    cross join icd10_release_year as i10ry
+    left outer join {{ ref('terminology__icd_10_cm_scd') }} as term
+        on base.diagnosis_code_1 = term.icd_10_cm
+        and {{ apply_icd10_valid_date_filter(try_to_cast_date('base.claim_start_date', 'YYYY-MM-DD'), 'term', 'i10ry') }}
 ),
 
 claim_grain as (
@@ -60,6 +69,9 @@ select distinct -- to bring to claim_id grain
     , cast({{ substring('agg.field_aggregated', 1, 255) }} as {{ dbt.type_string() }}) as field_value
     , '{{ var('tuva_last_run') }}' as tuva_last_run
 from base as m
+cross join icd10_release_year as i10ry
 left outer join claim_grain as cg on m.claim_id = cg.claim_id and m.data_source = cg.data_source
-left outer join {{ ref('terminology__icd_10_cm') }} as term on m.diagnosis_code_1 = term.icd_10_cm
+left outer join {{ ref('terminology__icd_10_cm_scd') }} as term
+    on m.diagnosis_code_1 = term.icd_10_cm
+    and {{ apply_icd10_valid_date_filter(try_to_cast_date('m.claim_start_date', 'YYYY-MM-DD'), 'term', 'i10ry') }}
 left outer join claim_agg as agg on m.claim_id = agg.claim_id and m.data_source = agg.data_source

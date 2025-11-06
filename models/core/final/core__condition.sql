@@ -5,7 +5,13 @@
 }}
 
 
-with all_conditions as (
+with icd10_release_year as (
+  select
+    max(release_year) as max_release_year
+  from {{ ref('terminology__icd_10_cm_scd') }}
+)
+
+, all_conditions as (
 {% if var('clinical_enabled', var('tuva_marts_enabled', False)) == true
     and var('claims_enabled', var('tuva_marts_enabled', False)) == true -%}
 
@@ -72,9 +78,11 @@ select
   , all_conditions.tuva_last_run
 from
 all_conditions
-left outer join {{ ref('terminology__icd_10_cm') }} as icd10
+cross join icd10_release_year as i10ry
+left outer join {{ ref('terminology__icd_10_cm_scd') }} as icd10
     on all_conditions.source_code_type = 'icd-10-cm'
         and replace(all_conditions.source_code, '.', '') = icd10.icd_10_cm
+        and {{ apply_icd10_valid_date_filter("all_conditions.recorded_date", 'icd10', 'i10ry') }}
 left outer join {{ ref('terminology__icd_9_cm') }} as icd9
     on all_conditions.source_code_type = 'icd-9-cm'
         and replace(all_conditions.source_code, '.', '') = icd9.icd_9_cm
@@ -134,9 +142,11 @@ select
   , all_conditions.tuva_last_run
 from
 all_conditions
-left join {{ ref('terminology__icd_10_cm') }} icd10
+cross join icd10_release_year as i10ry
+left join {{ ref('terminology__icd_10_cm_scd') }} icd10
     on all_conditions.source_code_type = 'icd-10-cm'
         and replace(all_conditions.source_code,'.','') = icd10.icd_10_cm
+        and {{ apply_icd10_valid_date_filter("all_conditions.recorded_date", 'icd10', 'i10ry') }}
 left join {{ ref('terminology__icd_9_cm') }} icd9
     on all_conditions.source_code_type = 'icd-9-cm'
         and replace(all_conditions.source_code,'.','') = icd9.icd_9_cm
