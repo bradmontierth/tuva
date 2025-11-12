@@ -323,7 +323,7 @@ with icd10_release_year as (
     from (
     select
         cast('invalid primary diagnosis' as {{ dbt.type_string() }}) as data_quality_check
-        , claim_id
+        , dx.claim_id
         , diagnosis_code_type
         , diagnosis_column
         , diagnosis_code
@@ -374,7 +374,7 @@ with icd10_release_year as (
     from (
     select
         cast('invalid secondary diagnosis' as {{ dbt.type_string() }}) as data_quality_check
-        , claim_id
+        , dx.claim_id
         , case
             when icd10.icd_10_cm is null and icd9.icd_9_cm is null
                 then 1
