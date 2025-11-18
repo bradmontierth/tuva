@@ -26,6 +26,8 @@ order by stg.claim_type, stg.start_date) as encounter_row_number --institutional
     and
     stg.claim_line_number = cli.claim_line_number
     and
+    stg.data_source = cli.data_source
+    and
     cli.encounter_type = 'ambulatory surgery center'
     and
     cli.claim_line_attribution_number = 1

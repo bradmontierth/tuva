@@ -9,6 +9,7 @@ with anchor as (
       , mc.start_date
       , mc.claim_id
       , mc.claim_line_number
+      , mc.data_source
       , mc.service_category_1
       , mc.service_category_2
       , mc.service_category_3
@@ -24,6 +25,7 @@ select
   , start_date
   , claim_id
   , claim_line_number
+  , data_source
   , service_category_1
   , service_category_2
   , service_category_3

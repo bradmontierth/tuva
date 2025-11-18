@@ -11,25 +11,53 @@
 --      service_category_1
 --      service_category_2
 -- *************************************************
+with med as (
+    select *
+    from {{ ref('normalized_input__medical_claim') }}
+)
 
-with all_encounters as (
+, crosswalk_with_source as (
+    select
+        enc.claim_id
+      , enc.claim_line_number
+      , enc.data_source
+      , enc.encounter_id
+      , enc.encounter_type
+      , enc.encounter_group
+    from {{ ref('encounters__combined_claim_line_crosswalk') }} as enc
+    where enc.claim_line_attribution_number = 1
+)
+
+, orphaned_with_source as (
+    select
+        orphan.claim_id
+      , orphan.claim_line_number
+      , orphan.data_source
+      , orphan.encounter_id
+      , orphan.encounter_type
+      , orphan.encounter_group
+    from {{ ref('encounters__orphaned_claims') }} as orphan
+)
+
+, all_encounters as (
     select claim_id
 , claim_line_number
+, data_source
 , encounter_id
 , encounter_type
 , encounter_group
-    from {{ ref('encounters__combined_claim_line_crosswalk') }}
-    where claim_line_attribution_number = 1
+    from crosswalk_with_source
 
     union all
 
     select
   claim_id
 , claim_line_number
+, data_source
 , encounter_id
 , encounter_type
 , encounter_group
-    from {{ ref('encounters__orphaned_claims') }}
+    from orphaned_with_source
 )
 
 select
@@ -107,14 +135,16 @@ select
     , cast(med.data_source as {{ dbt.type_string() }}) as data_source
     , {{ try_to_cast_date('med.file_date', 'YYYY-MM-DD') }} as file_date
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
-from {{ ref('normalized_input__medical_claim') }} as med
+from med
 inner join {{ ref('service_category__service_category_grouper') }} as srv_group
   on med.claim_id = srv_group.claim_id
   and med.claim_line_number = srv_group.claim_line_number
+  and med.data_source = srv_group.data_source
   and srv_group.duplicate_row_number = 1
 inner join all_encounters as x
   on med.claim_id = x.claim_id
   and med.claim_line_number = x.claim_line_number
+  and med.data_source = x.data_source
 left outer join {{ ref('claims_enrollment__flag_claims_with_enrollment') }} as enroll
   on med.claim_id = enroll.claim_id
   and med.claim_line_number = enroll.claim_line_number

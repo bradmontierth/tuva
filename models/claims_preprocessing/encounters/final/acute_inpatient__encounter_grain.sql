@@ -22,6 +22,8 @@ with icd10_release_year as (
     and
     stg.claim_line_number = cli.claim_line_number
     and
+    stg.data_source = cli.data_source
+    and
     cli.encounter_type = 'acute inpatient'
     and
     cli.claim_line_attribution_number = 1

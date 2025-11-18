@@ -18,6 +18,7 @@ with icd10_release_year as (
     inner join {{ ref('encounters__orphaned_claims') }} as cli
       on stg.claim_id = cli.claim_id
       and stg.claim_line_number = cli.claim_line_number
+      and stg.data_source = cli.data_source
     group by
         cli.encounter_id
 )
@@ -35,6 +36,8 @@ order by stg.claim_type, stg.start_date) as encounter_row_number --institutional
     inner join {{ ref('encounters__orphaned_claims') }} as cli on stg.claim_id = cli.claim_id
     and
     stg.claim_line_number = cli.claim_line_number
+    and
+    stg.data_source = cli.data_source
     inner join encounter_date as d on cli.encounter_id = d.encounter_id
 )
 

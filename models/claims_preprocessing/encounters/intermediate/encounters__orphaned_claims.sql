@@ -6,6 +6,7 @@
 with cte as (
   select stg.claim_id
   , stg.claim_line_number
+  , stg.data_source
   , stg.service_category_1
   , stg.service_category_2
   , stg.service_category_3
@@ -17,8 +18,8 @@ with cte as (
   , stg.patient_data_source_id
   from {{ ref('encounters__stg_medical_claim') }} as stg
   left outer join {{ ref('encounters__combined_claim_line_crosswalk') }} as enc on stg.claim_id = enc.claim_id
-  and
-  stg.claim_line_number = enc.claim_line_number
+  and stg.claim_line_number = enc.claim_line_number
+  and stg.data_source = enc.data_source
   where enc.claim_id is null -- missing from encounter mapping table
 )
 
@@ -30,8 +31,9 @@ with cte as (
 select
   claim_id
 , claim_line_number
+, data_source
 , dense_rank() over (
-order by patient_data_source_id, claim_id) + max_encounter.max_encounter_id as encounter_id
+order by patient_data_source_id, data_source, claim_id) + max_encounter.max_encounter_id as encounter_id
 , 'orphaned claim' as encounter_type
 , 'other' as encounter_group
 from cte

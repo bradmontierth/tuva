@@ -17,6 +17,8 @@ where relative_rank = 1
 
 select r.claim_id
 , r.claim_line_number
+, r.data_source
+, r.patient_data_source_id
 , r.old_encounter_id
 , x.encounter_type
 from rank_cte as r
