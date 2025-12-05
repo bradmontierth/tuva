@@ -817,6 +817,7 @@ models:
         - service_category_grouper
         - claims_preprocessing
   - name: service_category__dme_institutional
+    description: service categories flagged by corresponding codes and value sets
     config:
       schema: |
         {%- if var('tuva_schema_prefix', None) != None -%}{{var('tuva_schema_prefix')}}_claims_preprocessing{%- else %}claims_preprocessing{%- endif -%}

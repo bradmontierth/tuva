@@ -605,6 +605,27 @@ models:
       - name: tuva_last_run
         description: The date the model was run.
 
+  - name: cms_hcc__int_medicare_enrollment_start
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_cms_hcc{% else %}cms_hcc{%- endif -%}
+      alias: _int_medicare_enrollment_start
+      tags: cms_hcc
+      materialized: table
+    description: >
+      Earliest Medicare Part B enrollment start for each person, preferring the
+      eligibility-provided start date and otherwise inferring the first Medicare
+      claim meeting Part B criteria.
+    columns:
+      - name: person_id
+        description: Unique ID for the patient.
+      - name: final_start
+        description: Medicare Part B enrollment start date (actual or inferred).
+      - name: start_source
+        description: Indicates whether start is sourced from eligibility or claims.
+      - name: tuva_last_run
+        description: The date the model was run.
+
   - name: cms_hcc__int_members
     config:
       schema: |

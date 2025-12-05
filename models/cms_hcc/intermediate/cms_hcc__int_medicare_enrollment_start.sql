@@ -26,14 +26,19 @@ with actual as (
       - Part B claim types: claim_type = 'professional' OR (claim_type = 'institutional' and service_category_1 <> 'inpatient')
       - Medicare detection via eligibility payer_type in ('medicare','medicare advantage')
 */
+, medicare_persons as (
+
+    select distinct person_id
+    from {{ ref('core__stg_claims_eligibility') }}
+    where lower(payer_type) in ('medicare','medicare advantage')
+)
+
 , medicare_claims as (
 
     select mc.person_id, mc.claim_type, mc.service_category_1, mc.claim_end_date
     from {{ ref('core__medical_claim') }} as mc
-    inner join {{ ref('core__stg_claims_eligibility') }} as e
-        on mc.person_id = e.person_id
-        and lower(e.payer_type) in ('medicare','medicare advantage')
-        and mc.claim_end_date between e.enrollment_start_date and e.enrollment_end_date
+    inner join medicare_persons as mp
+        on mc.person_id = mp.person_id
 )
 
 , part_b_candidate_claims as (
