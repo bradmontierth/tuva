@@ -65,6 +65,18 @@ models:
           Pattern varies by factor_type (e.g., DEM| for demographic; Disease
           includes HCC code and demographic dimensions; interactions include
           relevant dimensions and codes).
+      - name: hcc_number
+        description: >
+          Numeric HCC identifier (e.g., 50). Null for non-HCC factors; for
+          interaction factors this is populated with the first available HCC.
+      - name: hcc_number_1
+        description: >
+          Numeric HCC identifier (e.g., 50). For 2-HCC interaction factors,
+          this is the first HCC; for single-HCC factors this equals `hcc_number`.
+      - name: hcc_number_2
+        description: >
+          Numeric HCC identifier for 2-HCC interaction factors (e.g., 28);
+          null for non-interaction factors.
       - name: coefficient
         description: >
           Relative factor value that correspond to the CMS HCC model's 
@@ -129,6 +141,18 @@ models:
         description: >
           Deterministic key identifying the specific risk factor instance for
           the collection period. Pattern varies by factor_type.
+      - name: hcc_number
+        description: >
+          Numeric HCC identifier (e.g., 50). Null for non-HCC factors; for
+          interaction factors this is populated with the first available HCC.
+      - name: hcc_number_1
+        description: >
+          Numeric HCC identifier (e.g., 50). For 2-HCC interaction factors,
+          this is the first HCC; for single-HCC factors this equals `hcc_number`.
+      - name: hcc_number_2
+        description: >
+          Numeric HCC identifier for 2-HCC interaction factors (e.g., 28);
+          null for non-interaction factors.
       - name: coefficient
         description: >
           Relative factor value that correspond to the CMS HCC model's 

@@ -211,6 +211,21 @@ with demographic_factors as (
         , demographic_lookup.orec as demographic_orec
         , demographic_lookup.institutional_status as demographic_institutional_status
         , case
+            when unioned.hcc_code is not null then unioned.hcc_code
+            when unioned.hcc_code_1 is not null then unioned.hcc_code_1
+            when unioned.hcc_code_2 is not null then unioned.hcc_code_2
+            else null
+          end as hcc_number
+        , case
+            when unioned.hcc_code_1 is not null then unioned.hcc_code_1
+            when unioned.hcc_code is not null then unioned.hcc_code
+            else null
+          end as hcc_number_1
+        , case
+            when unioned.hcc_code_2 is not null then unioned.hcc_code_2
+            else null
+          end as hcc_number_2
+        , case
             when unioned.factor_type = 'Demographic' then {{ concat_custom([
                   "'DEM|'",
                   concat_custom([
@@ -348,6 +363,9 @@ with demographic_factors as (
         {% endif %}
         , cast(factor_type as {{ dbt.type_string() }}) as factor_type
         , cast(risk_factor_key as {{ dbt.type_string() }}) as risk_factor_key
+        , cast(nullif(hcc_number, '') as {{ dbt.type_int() }}) as hcc_number
+        , cast(nullif(hcc_number_1, '') as {{ dbt.type_int() }}) as hcc_number_1
+        , cast(nullif(hcc_number_2, '') as {{ dbt.type_int() }}) as hcc_number_2
         , round(cast(coefficient as {{ dbt.type_numeric() }}), 3) as coefficient
         , cast(model_version as {{ dbt.type_string() }}) as model_version
         , cast(payment_year as integer) as payment_year
@@ -372,6 +390,9 @@ select
     , institutional_status_default
     , factor_type
     , risk_factor_key
+    , hcc_number
+    , hcc_number_1
+    , hcc_number_2
     , coefficient
     , model_version
     , payment_year

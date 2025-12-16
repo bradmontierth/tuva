@@ -19,6 +19,9 @@ select
     , eligibility_imputed
     , factor_type
     , risk_factor_key
+    , hcc_number
+    , hcc_number_1
+    , hcc_number_2
     , coefficient
     , model_version
     , payment_year
