@@ -62,13 +62,45 @@ select cast(null as varchar(1)) as version,
        cast(null as varchar(1)) as metric_name,
        cast(null as varchar(1)) as mart,
        cast(null as varchar(1)) as table_name,
-       cast(null as numeric) as metric_value
+       cast(null as numeric) as metric_value,
+       cast(null as varchar(1)) as tuva_last_run,
+       cast(null as varchar(1)) as base_schema_tuva_last_run,
+       cast(null as varchar(1)) as head_schema_tuva_last_run
 where 1 = 0
 {% else %}
 {% set versions = [
     {'name': 'base', 'prefix': base_prefix},
     {'name': 'head', 'prefix': head_prefix}
 ] %}
+
+{% set run_anchor_relations = {} %}
+{% for version in versions %}
+    {% set version_schema_prefix = version.prefix %}
+    {% set anchor = namespace(relation=none) %}
+
+    {# Prefer core tables if present #}
+    {% set core_candidates = ['medical_claim', 'encounter', 'member_months', 'pharmacy_claim', 'person_id_crosswalk'] %}
+    {% for identifier in core_candidates %}
+        {% set candidate = adapter.get_relation(database=database_name, schema=version_schema_prefix ~ 'core', identifier=identifier) %}
+        {% if candidate is not none %}
+            {% set anchor.relation = candidate %}
+            {% break %}
+        {% endif %}
+    {% endfor %}
+
+    {# Otherwise, pick the first available final model relation #}
+    {% if anchor.relation is none %}
+        {% for node in final_nodes %}
+            {% set candidate = adapter.get_relation(database=database_name, schema=version_schema_prefix ~ node.mart, identifier=node.alias) %}
+            {% if candidate is not none %}
+                {% set anchor.relation = candidate %}
+                {% break %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    {% do run_anchor_relations.update({version.name: anchor.relation}) %}
+{% endfor %}
 
 with
 {% for version in versions %}
@@ -83,10 +115,11 @@ with
            '{{ metric.mart }}' as mart,
            '{{ metric.table_name }}' as table_name,
         {% if relation is none %}
-           0 as metric_value
+           0 as metric_value,
         {% else %}
-           {{ metric.expression }} as metric_value
+           {{ metric.expression }} as metric_value,
         {% endif %}
+           '{{ var('tuva_last_run') }}' as tuva_last_run
         {% if relation is not none %}
     from {{ relation }}
         {% endif %}
@@ -98,13 +131,29 @@ with
     {% if not loop.last %}
 ,
     {% endif %}
-{% endfor %}
+{% endfor %},
+run_timestamps as (
+    select
+        {% for version in versions %}
+            {% set anchor_relation = run_anchor_relations[version.name] %}
+            {% if anchor_relation is none %}
+                cast(null as {{ dbt.type_string() }}) as {{ version.name }}_schema_tuva_last_run
+            {% else %}
+                cast((select max(tuva_last_run) from {{ anchor_relation }}) as {{ dbt.type_string() }}) as {{ version.name }}_schema_tuva_last_run
+            {% endif %}
+            {% if not loop.last %},{% endif %}
+        {% endfor %}
+)
 select version,
        metric_name,
        mart,
        table_name,
-       metric_value
+       metric_value,
+       tuva_last_run,
+       run_timestamps.base_schema_tuva_last_run,
+       run_timestamps.head_schema_tuva_last_run
 from base_metrics
+cross join run_timestamps
 
 union all
 
@@ -112,6 +161,10 @@ select version,
        metric_name,
        mart,
        table_name,
-       metric_value
+       metric_value,
+       tuva_last_run,
+       run_timestamps.base_schema_tuva_last_run,
+       run_timestamps.head_schema_tuva_last_run
 from head_metrics
+cross join run_timestamps
 {% endif %}

@@ -41,6 +41,18 @@ Notes:
 - The CSV should include columns like: `data_source, metric_id, metric_name, claim_scope, denominator_n, valid_n, invalid_n, null_n, multiple_n, valid_pct, threshold, pass_flag`.
 - No PHI: this workflow requires a manual export from your warehouse so implementers can validate what leaves their environment.
 
+# Base vs Head Metrics
+
+This page compares metrics between two schema prefixes (defaults: `base_` and `head_`) across Tuva marts.
+
+To produce the CSV:
+1. Ensure you have both sets of schemas available (e.g., `base_core` and `head_core`, etc.).
+2. Run `dbt run -s data_quality__base_head_compare`.
+3. Export the resulting table (alias `data_quality.base_head_compare`, actual schema may be prefixed by `tuva_schema_prefix`) to CSV.
+   The export includes a `tuva_last_run` column so the UI can display when the comparison dataset was generated.
+   It also includes `base_schema_tuva_last_run` and `head_schema_tuva_last_run` to show when the underlying base/head marts were last built.
+4. Copy the CSV to `ui/data/data_quality__base_head_compare.csv`, or open `ui/data_quality_base_head_compare.html` and upload it via the `Choose CSV` button.
+
 # Mart Review Dashboard
 
 This page provides a PHI-safe dashboard for the `mart_review` checks and summaries. It expects one or more aggregated CSVs exported from your warehouse, grouped at minimum by `data_source` and, where applicable, by `payer` and `plan`. Do not export person-level rows.

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Quality Base vs Head</title>
+    <title>Illuminate Health | Base vs Head Metrics</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <style>
         * {
             margin: 0;
@@ -79,8 +80,21 @@
             gap: 15px;
         }
 
+        .brand-lockup {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            width: fit-content;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+            color: #0f172a;
+        }
+
         .header-logo {
-            height: 30px;
+            height: 28px;
             width: auto;
         }
 
@@ -124,6 +138,35 @@
             gap: 20px;
             flex-wrap: wrap;
             align-items: center;
+        }
+
+        .hint {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #3b82f6;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin: 0 0 22px 0;
+            color: #374151;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .hint code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9em;
+            background: rgba(59, 130, 246, 0.08);
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        .hint a {
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+
+        .hint a:hover {
+            text-decoration: underline;
         }
 
         .control-group {
@@ -431,8 +474,16 @@
             gap: 15px;
         }
 
+        .footer-logo-section.brand-lockup {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(226, 232, 240, 0.55);
+            box-shadow: none;
+            color: #0f172a;
+        }
+
         .footer-logo {
-            height: 40px;
+            height: 34px;
             width: auto;
         }
 
@@ -447,16 +498,34 @@
         <div class="header">
             <a class="back" href="index.html">← Back</a>
             <div class="header-content">
-                <h2><img src="assets/tuva_logo.png" alt="Tuva Logo" class="header-logo">TUVA Health</h2>
+                <h2 class="brand-lockup"><img src="assets/illuminate-logo-transparent.png" alt="Illuminate Health Logo" class="header-logo">Illuminate Health</h2>
                 <h1>Base vs Head Metrics</h1>
-                <p>Compare base and head outputs across marts. Viewing <span id="metricSummaryLabel">Row Count</span>.</p>
+                <p>
+                    Compare base and head outputs across marts. Viewing <span id="metricSummaryLabel">Row Count</span>.
+                    <span id="tuvaLastRunText" style="display:none;"> Comparison run: <span id="tuvaLastRunLabel"></span>.</span>
+                    <span id="schemaRunText" style="display:none;"> Base marts run: <span id="baseSchemaRunLabel"></span>. Head marts run: <span id="headSchemaRunLabel"></span>.</span>
+                </p>
             </div>
+        </div>
+
+        <div class="hint">
+            Build the dataset in your warehouse with <code>dbt run -s data_quality__base_head_compare</code>, then export the resulting
+            table (alias <code>data_quality.base_head_compare</code>, schema may be prefixed) to CSV and load it here.
+            This model is defined in <code>models/data_quality/data_quality__base_head_compare.sql</code>.
         </div>
 
         <div class="controls">
             <div class="control-group">
                 <label for="fileInput">Choose CSV</label>
                 <input type="file" id="fileInput" accept=".csv">
+            </div>
+            <div class="control-group">
+                <label for="csvHasHeader">CSV Header</label>
+                <select id="csvHasHeader">
+                    <option value="auto" selected>Auto-detect</option>
+                    <option value="yes">Has header row</option>
+                    <option value="no">No header row</option>
+                </select>
             </div>
             <div class="control-group">
                 <label for="metricSelect">Metric</label>
@@ -492,11 +561,11 @@
         <div class="footer">
             <div class="footer-inner">
                 <div class="footer-content">
-                    <div class="footer-logo-section">
-                        <img src="assets/tuva_logo_white.png" alt="Tuva Logo" class="footer-logo">
-                        <div class="footer-brand">TUVA</div>
+                    <div class="footer-logo-section brand-lockup">
+                        <img src="assets/illuminate-logo-transparent.png" alt="Illuminate Health Logo" class="footer-logo">
+                        <div class="footer-brand">Illuminate Health</div>
                     </div>
-                    <div>© 2024 Tuva Health. All rights reserved.</div>
+                    <div>© 2024 Illuminate Health. All rights reserved.</div>
                 </div>
             </div>
         </div>
@@ -509,6 +578,8 @@
         let availableMetrics = [];
         let currentMetric = '';
         let currentSort = { column: 'absDelta', direction: 'desc' };
+        let lastCsvText = '';
+        let csvHasHeader = null; // null = auto-detect
 
         const SORT_CONFIG = {
             mart: { key: 'mart', type: 'string', defaultDirection: 'asc' },
@@ -525,6 +596,7 @@
             document.getElementById('fileInput').addEventListener('change', handleFileUpload);
             document.getElementById('diffOnly').addEventListener('change', updateDashboard);
             document.getElementById('metricSelect').addEventListener('change', handleMetricChange);
+            document.getElementById('csvHasHeader').addEventListener('change', handleHeaderToggle);
         });
 
         async function loadData() {
@@ -536,6 +608,7 @@
                 }
 
                 const csvText = await response.text();
+                lastCsvText = csvText;
                 setTableRowsFromCSV(csvText);
             } catch (error) {
                 showError(error.message);
@@ -557,6 +630,7 @@
                     if (typeof csvText !== 'string') {
                         throw new Error('Unable to read the selected file.');
                     }
+                    lastCsvText = csvText;
                     setTableRowsFromCSV(csvText);
                 } catch (error) {
                     showError(error.message || 'Error processing uploaded file.');
@@ -571,22 +645,36 @@
         }
 
         function setTableRowsFromCSV(csvText) {
-            const parsed = parseCSV(csvText);
+            const parsed = parseCSV(csvText, csvHasHeader);
             setTableRows(parsed);
         }
 
+        function handleHeaderToggle(event) {
+            const value = event.target.value;
+            csvHasHeader = value === 'auto' ? null : value === 'yes';
+            if (lastCsvText) {
+                setTableRowsFromCSV(lastCsvText);
+            }
+        }
+
         function setTableRows(parsedRows) {
-            tableRows = parsedRows
-                .map(row => {
-                    const metricName = row.metric_name || row.metric || 'row_count';
-                    const tableName = row.table_name || row.table || '';
-                    const metricValueRaw = row.metric_value ?? row.value ?? row.row_count;
-                    return {
-                        metricName,
-                        mart: row.mart,
-                        tableName,
-                        version: row.version,
-                        metricValue: parseNumber(metricValueRaw)
+	            tableRows = parsedRows
+	                .map(row => {
+	                    const metricName = row.metric_name || row.metric || 'row_count';
+	                    const tableName = row.table_name || row.table || '';
+	                    const metricValueRaw = row.metric_value ?? row.value ?? row.row_count;
+	                    const tuvaLastRun = row.tuva_last_run || row.tuva_last_run_date || row.last_run || row.run_date || '';
+	                    const baseSchemaRun = row.base_schema_tuva_last_run || row.base_tuva_last_run || '';
+	                    const headSchemaRun = row.head_schema_tuva_last_run || row.head_tuva_last_run || '';
+	                    return {
+	                        metricName,
+	                        mart: row.mart,
+	                        tableName,
+	                        version: row.version,
+                        metricValue: parseNumber(metricValueRaw),
+                        tuvaLastRun,
+                        baseSchemaRun,
+                        headSchemaRun
                     };
                 })
                 .filter(row => row.tableName && row.version && row.metricName);
@@ -595,20 +683,170 @@
                 throw new Error('No rows found in CSV file.');
             }
 
-            initializeMetricFilter();
-            updateDashboard();
+            updateTuvaLastRunLabel();
+            updateSchemaRunLabels();
+	            initializeMetricFilter();
+	            updateDashboard();
+	        }
+
+	        function updateTuvaLastRunLabel() {
+	            const label = document.getElementById('tuvaLastRunLabel');
+	            const wrapper = document.getElementById('tuvaLastRunText');
+            if (!label || !wrapper) {
+                return;
+            }
+
+            const values = Array.from(new Set(
+                tableRows
+                    .map(row => (row.tuvaLastRun || '').trim())
+                    .filter(Boolean)
+            ));
+
+            if (!values.length) {
+                wrapper.style.display = 'none';
+                label.textContent = '';
+                return;
+            }
+
+            const formattedValues = values.map(formatRunTimestamp).filter(Boolean);
+            const displayValue = formattedValues.length === 1
+                ? formattedValues[0]
+                : `${formattedValues[0]} (multiple values)`;
+            label.textContent = displayValue;
+            wrapper.style.display = 'inline';
         }
 
-        function parseCSV(csvText) {
+        function updateSchemaRunLabels() {
+            const wrapper = document.getElementById('schemaRunText');
+            const baseLabel = document.getElementById('baseSchemaRunLabel');
+            const headLabel = document.getElementById('headSchemaRunLabel');
+            if (!wrapper || !baseLabel || !headLabel) {
+                return;
+            }
+
+            const baseValues = Array.from(new Set(
+                tableRows.map(row => (row.baseSchemaRun || '').trim()).filter(Boolean)
+            ));
+            const headValues = Array.from(new Set(
+                tableRows.map(row => (row.headSchemaRun || '').trim()).filter(Boolean)
+            ));
+
+            if (!baseValues.length && !headValues.length) {
+                wrapper.style.display = 'none';
+                baseLabel.textContent = '';
+                headLabel.textContent = '';
+                return;
+            }
+
+            const baseFormatted = baseValues.length ? formatRunTimestamp(baseValues[0]) : 'N/A';
+            const headFormatted = headValues.length ? formatRunTimestamp(headValues[0]) : 'N/A';
+
+            baseLabel.textContent = baseValues.length > 1 ? `${baseFormatted} (multiple values)` : baseFormatted;
+            headLabel.textContent = headValues.length > 1 ? `${headFormatted} (multiple values)` : headFormatted;
+            wrapper.style.display = 'inline';
+        }
+
+        function formatRunTimestamp(rawValue) {
+            if (!rawValue) {
+                return '';
+            }
+
+            const normalized = normalizeTimestampString(rawValue);
+            const parsedMs = Date.parse(normalized);
+            if (Number.isNaN(parsedMs)) {
+                return rawValue;
+            }
+
+            try {
+                const date = new Date(parsedMs);
+                if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+                    const formatter = new Intl.DateTimeFormat(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZoneName: 'short'
+                    });
+                    return formatter.format(date);
+                }
+
+                return date.toLocaleString();
+            } catch {
+                return rawValue;
+            }
+        }
+
+        function normalizeTimestampString(value) {
+            const trimmed = value.trim();
+            let normalized = trimmed.replace(/\sUTC$/i, '');
+
+            if (normalized.includes(' ') && !normalized.includes('T')) {
+                const firstSpace = normalized.indexOf(' ');
+                if (firstSpace > 0) {
+                    normalized = normalized.slice(0, firstSpace) + 'T' + normalized.slice(firstSpace + 1);
+                }
+            }
+
+            // dbt's default `run_started_at` formatting can include microseconds (6 digits),
+            // but JS Date parsing only supports milliseconds (3 digits).
+            normalized = normalized.replace(
+                /\.(\d{3})\d+(?=[Z+-]|$)/,
+                '.$1'
+            ).replace(
+                /\.(\d{3})\d+$/,
+                '.$1'
+            );
+
+            if (normalized.endsWith('+00:00')) {
+                normalized = normalized.slice(0, -6) + 'Z';
+            }
+
+            // Fabric exports can emit timestamps without a timezone (e.g., 2025-12-15T22:22:20.654322).
+            // `tuva_last_run` in this project is generated in UTC, so treat timezone-less values as UTC.
+            const hasExplicitZone = /([zZ]|[+-]\d{2}:\d{2})$/.test(normalized);
+            const looksLikeDatetime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(normalized);
+            if (!hasExplicitZone && looksLikeDatetime) {
+                normalized = normalized + 'Z';
+            }
+
+            return normalized;
+        }
+
+        function parseCSV(csvText, hasHeaderRow = null) {
             const sanitized = csvText.replace(/^\uFEFF/, '');
             const lines = sanitized.trim().split(/\r?\n/);
             if (!lines.length) {
                 return [];
             }
 
-            const headers = splitCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
+            const firstLineValues = splitCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
+            const detectedHasHeader = hasHeaderRow === null ? detectHeaderRow(firstLineValues) : hasHeaderRow;
 
-            return lines.slice(1).map(line => {
+            const defaultHeaders = [
+                'version',
+                'metric_name',
+                'mart',
+                'table_name',
+                'metric_value',
+                'tuva_last_run',
+                'base_schema_tuva_last_run',
+                'head_schema_tuva_last_run'
+            ];
+
+            const headers = detectedHasHeader
+                ? firstLineValues
+                : defaultHeaders.slice(0, firstLineValues.length).concat(
+                    Array.from(
+                        { length: Math.max(0, firstLineValues.length - defaultHeaders.length) },
+                        (_, idx) => `col_${defaultHeaders.length + idx + 1}`
+                    )
+                );
+
+            const dataLines = detectedHasHeader ? lines.slice(1) : lines;
+
+            return dataLines.map(line => {
                 const values = splitCSVLine(line);
                 const record = {};
 
@@ -624,6 +862,19 @@
 
                 return record;
             });
+        }
+
+        function detectHeaderRow(firstRowValues) {
+            const first = (firstRowValues?.[0] || '').toLowerCase();
+            if (first === 'version' || first === 'metric_name' || first === 'metric' || first === 'mart' || first === 'table_name' || first === 'table') {
+                return true;
+            }
+            if (first === 'base' || first === 'head') {
+                return false;
+            }
+
+            const joined = (firstRowValues || []).map(value => (value || '').toLowerCase()).join(',');
+            return joined.includes('metric_value') || joined.includes('metric_name') || joined.includes('table_name');
         }
 
         function splitCSVLine(line) {

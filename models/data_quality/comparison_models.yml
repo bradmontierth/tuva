@@ -1,9 +1,32 @@
 version: 2
 models:
   - name: data_quality__base_head_compare
-    description: Random 10k distinct person_ids from eligibility.
+    description: >
+      Aggregated metrics comparing two schema prefixes (defaults: base vs head)
+      across Tuva final marts.
     config:
       schema: data_quality
       materialized: table
       tags: comparison
       alias: base_head_compare
+    columns:
+      - name: version
+        description: Which schema prefix the metric was calculated from (base or head).
+      - name: metric_name
+        description: Metric identifier (e.g., row_count).
+      - name: mart
+        description: Mart name derived from model path.
+      - name: table_name
+        description: Final model table alias being measured.
+      - name: metric_value
+        description: Numeric value of the metric.
+      - name: tuva_last_run
+        description: Timestamp indicating when this comparison dataset was generated.
+      - name: base_schema_tuva_last_run
+        description: >
+          Timestamp from the `base_` schemas indicating when those marts were last built (sourced from an
+          available `tuva_last_run` column in a base relation).
+      - name: head_schema_tuva_last_run
+        description: >
+          Timestamp from the `head_` schemas indicating when those marts were last built (sourced from an
+          available `tuva_last_run` column in a head relation).
