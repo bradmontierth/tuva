@@ -1,0 +1,88 @@
+trigger: none
+pr: none  # use Branch Policy build validation on main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  FABRIC_WORKSPACE_ID: 'b0436823-0828-4e29-a821-bf33333993e7'
+  FABRIC_PIPELINE_ITEM_ID: 'e7b0b825-ab51-473f-9784-7eac9dd60cca'
+
+steps:
+- checkout: none
+
+- task: AzureCLI@2
+  displayName: "Run Fabric pipeline (pass PR branch) and wait"
+  inputs:
+    azureSubscription: "a69a21c2-0f80-4a2e-947e-2a66fe0e1b71"
+    scriptType: pscore
+    scriptLocation: inlineScript
+    inlineScript: |
+      # --- Get source branch name ---
+      $branchRef = "$(System.PullRequest.SourceBranch)"
+      if ([string]::IsNullOrWhiteSpace($branchRef)) {
+        $branchRef = "$(Build.SourceBranch)"
+      }
+      $branchName = $branchRef -replace '^refs/heads/', ''
+      Write-Host "PR/source branch: $branchName"
+
+      # --- Get Fabric access token ---
+      $token = az account get-access-token `
+        --resource https://api.fabric.microsoft.com `
+        --query accessToken -o tsv
+
+      if ([string]::IsNullOrWhiteSpace($token)) { throw "Failed to acquire Fabric access token." }
+
+      $headers = @{
+        Authorization = "Bearer $token"
+        "Content-Type" = "application/json"
+      }
+
+      # --- Start Fabric pipeline job ---
+      $workspaceId = "$(FABRIC_WORKSPACE_ID)"
+      $itemId      = "$(FABRIC_PIPELINE_ITEM_ID)"
+
+      $runUrl = "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/items/$itemId/jobs/Pipeline/instances"
+
+      $bodyObj = @{
+        executionData = @{
+          parameters = @{
+            branchName = $branchName
+          }
+        }
+      }
+      $body = ($bodyObj | ConvertTo-Json -Depth 10)
+
+      $resp = Invoke-WebRequest -Method Post -Uri $runUrl -Headers $headers -Body $body
+
+      if ($resp.StatusCode -ne 202) {
+        throw "Expected 202 from Fabric. Got $($resp.StatusCode)."
+      }
+
+      $location = $resp.Headers.Location
+      if ([string]::IsNullOrWhiteSpace($location)) { throw "Fabric did not return a Location header." }
+
+      $jobInstanceId = $location.Split('/')[-1]
+      Write-Host "Fabric job instance id: $jobInstanceId"
+
+      # --- Poll status until terminal ---
+      $statusUrl = "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/items/$itemId/jobs/instances/$jobInstanceId"
+
+      $terminalStatuses = @("Completed", "Failed", "Cancelled")
+      while ($true) {
+        Start-Sleep -Seconds 20
+        $job = Invoke-RestMethod -Method Get -Uri $statusUrl -Headers $headers
+
+        $status = $job.status
+        Write-Host "Fabric status: $status"
+
+        if ($terminalStatuses -contains $status) { break }
+      }
+
+      # --- Fail ADO build if Fabric failed ---
+      if ($job.status -ne "Completed" -or $null -ne $job.failureReason) {
+        Write-Error "Fabric pipeline run did not succeed. Status=$($job.status) FailureReason=$($job.failureReason | ConvertTo-Json -Depth 10)"
+        exit 1
+      }
+
+      Write-Host "Fabric pipeline succeeded."
