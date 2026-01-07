@@ -14,7 +14,7 @@ steps:
 - task: AzureCLI@2
   displayName: "Run Fabric pipeline (pass PR branch) and wait"
   inputs:
-    azureSubscription: "a69a21c2-0f80-4a2e-947e-2a66fe0e1b71"
+    azureSubscription: "phip-poc"
     scriptType: pscore
     scriptLocation: inlineScript
     inlineScript: |
