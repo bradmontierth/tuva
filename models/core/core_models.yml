@@ -14,13 +14,16 @@ models:
       alias: appointment
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - appointment_id
+            - data_source
+          config:
+            severity: warn
     columns:
       - name: appointment_id
         description: '{{ doc("appointment_id") }}'
-        tests:
-          - unique:
-              config:
-                severity: warn
       - name: person_id
         description: '{{ doc("person_id") }}'
         tests:
@@ -134,13 +137,16 @@ models:
       alias: condition
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - condition_id
+            - data_source
+          config:
+            severity: warn
     columns:
     - name: condition_id
       description: '{{ doc("condition_id") }}'
-      tests:
-        - unique:
-            config:
-              severity: warn
     - name: person_id
       description: '{{ doc("person_id") }}'
       tests:
@@ -292,13 +298,18 @@ models:
         - core
         - encounters
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - encounter_id
+            - data_source
+          config:
+            severity: error
     columns:
     - name: _dbt_source_relation
       description: '{{ doc("_dbt_source_relation") }}'
     - name: encounter_id
       description: '{{ doc("encounter_id") }}'
-      tests:
-        - unique
     - name: person_id
       description: '{{ doc("person_id") }}'
       tests:
@@ -436,13 +447,16 @@ models:
       alias: immunization
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - immunization_id
+            - data_source
+          config:
+            severity: warn
     columns:
     - name: immunization_id
       description: '{{ doc("immunization_id") }}'
-      tests:
-        - unique:
-            config:
-              severity: warn
     - name: person_id
       description: '{{ doc("person_id") }}'
       tests:
@@ -512,13 +526,16 @@ models:
       alias: lab_result
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - lab_result_id
+            - data_source
+          config:
+            severity: warn
     columns:
     - name: lab_result_id
       description: '{{ doc("lab_result_id") }}'
-      tests:
-        - unique:
-            config:
-              severity: warn
     - name: person_id
       description: '{{ doc("person_id") }}'
       tests:
@@ -618,13 +635,16 @@ models:
       alias: location
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - location_id
+            - data_source
+          config:
+            severity: warn
     columns:
     - name: location_id
       description: '{{ doc("location_id") }}'
-      tests:
-        - unique:
-            config:
-              severity: warn
     - name: npi
       description: '{{ doc("npi") }}'
       meta:
@@ -856,13 +876,16 @@ models:
       alias: medication
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - medication_id
+            - data_source
+          config:
+            severity: warn
     columns:
     - name: medication_id
       description: '{{ doc("medication_id") }}'
-      tests:
-        - unique:
-            config:
-              severity: warn
     - name: person_id
       description: '{{ doc("person_id") }}'
       tests:
@@ -994,13 +1017,16 @@ models:
       alias: observation
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - observation_id
+            - data_source
+          config:
+            severity: warn
     columns:
     - name: observation_id
       description: '{{ doc("observation_id") }}'
-      tests:
-        - unique:
-            config:
-              severity: warn
     - name: person_id
       description: '{{ doc("person_id") }}'
       tests:
@@ -1061,14 +1087,18 @@ models:
       alias: patient
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - person_id
+            - data_source
+          config:
+            severity: error
     columns:
       - name: person_id
         description: '{{ doc("person_id") }}'
         tests:
           - not_null
-          - unique:
-              config:
-                severity: error
       - name: sex
         description: '{{ doc("sex") }}'
         meta:
@@ -1266,13 +1296,16 @@ models:
       alias: practitioner
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - practitioner_id
+            - data_source
+          config:
+            severity: warn
     columns:
       - name: practitioner_id
         description: '{{ doc("practitioner_id") }}'
-        tests:
-          - unique:
-              config:
-                severity: warn
       - name: npi
         description: '{{ doc("npi") }}'
         meta:
@@ -1304,13 +1337,16 @@ models:
       alias: procedure
       tags: core
       materialized: table
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - procedure_id
+            - data_source
+          config:
+            severity: warn
     columns:
       - name: procedure_id
         description: '{{ doc("procedure_id") }}'
-        tests:
-          - unique:
-              config:
-                severity: warn
       - name: encounter_id
         description: '{{ doc("encounter_id") }}'
       - name: claim_id

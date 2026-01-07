@@ -10,6 +10,18 @@ models:
         {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_input_layer{% else %}input_layer{%- endif -%}
       tags: input_layer
       materialized: view
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - location_id
+            - data_source
+          tags: ['tuva_dqi_sev_1', 'dqi', 'dqi_service_categories', 'dqi_ccsr',
+            'dqi_cms_chronic_conditions', 'dqi_tuva_chronic_conditions', 'dqi_cms_hccs',
+            'dqi_ed_classification', 'dqi_financial_pmpm', 'dqi_quality_measures',
+            'dqi_readmission']
+          config:
+            severity: error
+            enabled: "{{ var('enable_input_layer_testing', true) | as_bool }}"
     columns:
       - name: location_id
         description: '{{ doc("location_id") }}'
@@ -22,14 +34,6 @@ models:
               config:
                 severity: error
                 enabled: "{{ (var('enable_input_layer_testing', true)) | as_bool }}"
-          - unique:
-              tags: ['tuva_dqi_sev_1', 'dqi', 'dqi_service_categories', 'dqi_ccsr',
-                'dqi_cms_chronic_conditions', 'dqi_tuva_chronic_conditions', 'dqi_cms_hccs',
-                'dqi_ed_classification', 'dqi_financial_pmpm', 'dqi_quality_measures',
-                'dqi_readmission']
-              config:
-                severity: error
-                enabled: "{{ var('enable_input_layer_testing', true) | as_bool }}"
           - not_null:
               tags: ['tuva_dqi_sev_1', 'dqi', 'dqi_service_categories', 'dqi_ccsr',
                 'dqi_cms_chronic_conditions', 'dqi_tuva_chronic_conditions', 'dqi_cms_hccs',

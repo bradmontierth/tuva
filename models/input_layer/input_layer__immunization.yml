@@ -9,6 +9,15 @@ models:
         {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_input_layer{% else %}input_layer{%- endif -%}
       tags: input_layer
       materialized: view
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - immunization_id
+            - data_source
+          tags: ['tuva_dqi_sev_1', 'dqi']
+          config:
+            severity: error
+            enabled: "{{ var('enable_input_layer_testing', true) | as_bool }}"
     columns:
       - name: immunization_id
         description: '{{ doc("immunization_id") }}'
@@ -18,11 +27,6 @@ models:
               config:
                 severity: error
                 enabled: "{{ ((target.type != 'fabric') and var('enable_input_layer_testing', true)) | as_bool }}"
-          - unique:
-              tags: ['tuva_dqi_sev_1', 'dqi']
-              config:
-                severity: error
-                enabled: "{{ var('enable_input_layer_testing', true) | as_bool }}"
           - not_null:
               config:
                 severity: error

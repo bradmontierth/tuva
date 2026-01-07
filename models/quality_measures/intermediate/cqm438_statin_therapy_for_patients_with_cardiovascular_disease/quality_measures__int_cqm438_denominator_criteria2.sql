@@ -120,7 +120,12 @@ with cholesterol_codes as (
         , evidence_date
     from cholesterol_tests_with_result
     where rn = 1
+        {% if target.type == 'fabric' %}
+        and try_cast(evidence_value as decimal(38,10)) is not null
+        and try_cast(evidence_value as decimal(38,10)) >= 190
+        {% else %}
         and cast(evidence_value as {{ dbt.type_numeric() }}) >= 190
+        {% endif %}
 
 )
 

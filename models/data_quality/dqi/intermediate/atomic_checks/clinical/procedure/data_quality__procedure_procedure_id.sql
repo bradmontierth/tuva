@@ -12,6 +12,6 @@ select
     , 'PROCEDURE_ID' as field_name
     , case when m.procedure_id is not null then 'valid' else 'null' end as bucket_name
     , cast(null as {{ dbt.type_string() }}) as invalid_reason
-    , cast(procedure_id as {{ dbt.type_string() }}) as field_value
+    , {{ dbt_utils.generate_surrogate_key(['procedure_id', 'data_source']) }} as field_value
     , '{{ var('tuva_last_run') }}' as tuva_last_run
 from {{ ref('procedure') }} as m

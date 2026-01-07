@@ -11,6 +11,6 @@ select
     , 'APPOINTMENT_ID' as field_name
     , case when appointment_id is not null then 'valid' else 'null' end as bucket_name
     , cast(null as {{ dbt.type_string() }}) as invalid_reason
-    , cast(appointment_id as {{ dbt.type_string() }}) as field_value
+    , {{ dbt_utils.generate_surrogate_key(['appointment_id', 'data_source']) }} as field_value
     , '{{ var('tuva_last_run') }}' as tuva_last_run
 from {{ ref('appointment') }}
