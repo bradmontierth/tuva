@@ -38,6 +38,18 @@ steps:
         "Content-Type" = "application/json"
       }
 
+      $token = az account get-access-token `
+        --resource https://api.fabric.microsoft.com `
+        --query accessToken -o tsv
+
+      $headers = @{ Authorization = "Bearer $token" }
+
+      # Smoke test: lists workspaces the principal can access
+      Invoke-RestMethod -Method Get `
+        -Uri "https://api.fabric.microsoft.com/v1/workspaces" `
+        -Headers $headers
+
+
       # --- Start Fabric pipeline job ---
       $workspaceId = "$(FABRIC_WORKSPACE_ID)"
       $itemId      = "$(FABRIC_PIPELINE_ITEM_ID)"
