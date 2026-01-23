@@ -14,6 +14,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns:
             - person_id
+            - member_id
             - payer
             - "{{ '\"plan\"' if (target.type == 'fabric') else 'plan' }}"
             - year_month
@@ -57,6 +58,19 @@ models:
               config:
                 severity: warn
                 enabled: "{{ (var('enable_input_layer_testing', true)) | as_bool }}"
+      - name: member_id
+        description: '{{ doc("member_id") }}'
+        tests:
+          - the_tuva_project.expect_column_to_exist:
+              tags: ['tuva_dqi_sev_1', 'dqi', 'dqi_financial_pmpm']
+              config:
+                severity: warn
+                enabled: "{{ (var('enable_input_layer_testing', true)) | as_bool }}"
+          - not_null:
+              tags: ['tuva_dqi_sev_1', 'dqi', 'dqi_financial_pmpm']
+              config:
+                severity: error
+                enabled: "{{ var('enable_input_layer_testing', true) | as_bool }}"
       - name: year_month
         description: '{{ doc("year_month") }}'
         tests:
