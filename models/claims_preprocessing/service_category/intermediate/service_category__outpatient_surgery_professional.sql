@@ -18,6 +18,15 @@ inner join {{ ref('service_category__stg_professional') }} as prof
   and med.claim_line_number = prof.claim_line_number
   and med.data_source = prof.data_source
 where
-  (ccs_category between '1' and '176'
-  or ccs_category in ('229', '230', '231', '232', '244'))
+  (
+    ccs_category between '1' and '176'
+    or ccs_category in ('229', '230', '232', '244')
+    or (
+      ccs_category = '231'
+      and hcpcs_code not in (
+        '96360', '96361', '96365', '96366', '96367', '96368', '96369', '96370',
+        '96371', '96372', '96373', '96374', '96375', '96376', '96379'
+      )
+    )
+  )
   and place_of_service_code in ('15', '17', '19', '22', '49', '50', '60', '71', '72')

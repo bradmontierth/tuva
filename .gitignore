@@ -16,6 +16,7 @@ release_notes/
 .idea/
 .vscode/
 dbt_internal_packages/
+agents.md
 
 # Operating system files
 .DS_Store

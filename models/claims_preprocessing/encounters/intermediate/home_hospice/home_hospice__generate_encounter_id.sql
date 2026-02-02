@@ -8,7 +8,7 @@ select distinct m.patient_data_source_id
  , m.start_date
  , m.claim_id
 from {{ ref('encounters__stg_medical_claim') }} as m
-inner join {{ ref('outpatient_hospice__anchor_events') }} as u on m.claim_id = u.claim_id
+inner join {{ ref('home_hospice__anchor_events') }} as u on m.claim_id = u.claim_id
 )
 
 select patient_data_source_id

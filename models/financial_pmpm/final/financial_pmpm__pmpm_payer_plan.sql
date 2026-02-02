@@ -23,7 +23,7 @@ select
   , sum(durable_medical_equipment_paid) / count(1) as durable_medical_equipment_paid
   , sum(emergency_department_paid) / count(1) as emergency_department_paid
   , sum(home_health_paid) / count(1) as home_health_paid
-  , sum(inpatient_hospice_paid) / count(1) as inpatient_hospice_paid
+  , sum(facility_hospice_paid) / count(1) as facility_hospice_paid
   , sum(inpatient_psychiatric_paid) / count(1) as inpatient_psychiatric_paid
   , sum(inpatient_rehabilitation_paid) / count(1) as inpatient_rehabilitation_paid
   , sum(lab_paid) / count(1) as lab_paid
@@ -57,7 +57,7 @@ select
   , sum(durable_medical_equipment_allowed) / count(1) as durable_medical_equipment_allowed
   , sum(emergency_department_allowed) / count(1) as emergency_department_allowed
   , sum(home_health_allowed) / count(1) as home_health_allowed
-  , sum(inpatient_hospice_allowed) / count(1) as inpatient_hospice_allowed
+  , sum(facility_hospice_allowed) / count(1) as facility_hospice_allowed
   , sum(inpatient_psychiatric_allowed) / count(1) as inpatient_psychiatric_allowed
   , sum(inpatient_rehabilitation_allowed) / count(1) as inpatient_rehabilitation_allowed
   , sum(lab_allowed) / count(1) as lab_allowed

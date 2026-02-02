@@ -1,0 +1,32 @@
+encounter_type,priority_number
+acute inpatient,0
+emergency department,1
+facility hospice,2
+inpatient psych,3
+inpatient rehabilitation,4
+inpatient long term acute care,5
+inpatient skilled nursing,6
+inpatient substance use,7
+office visit radiology,8
+office visit surgery,9
+office visit injections,9
+office visit pt/ot/st,9
+office visit,9
+telehealth,9
+office visit - other,9
+urgent care,10
+outpatient psych,11
+outpatient rehabilitation,12
+ambulatory surgery center,13
+dialysis,14
+home hospice,15
+home health,16
+outpatient surgery,17
+outpatient injections,18
+outpatient pt/ot/st,19
+outpatient substance use,20
+outpatient radiology,21
+outpatient hospital or clinic,999
+lab - orphaned,1000000
+dme - orphaned,1000001
+ambulance - orphaned,1000002

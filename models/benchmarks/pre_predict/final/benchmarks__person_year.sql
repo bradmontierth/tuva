@@ -40,7 +40,7 @@ with subset as (
       , count(distinct case when e.encounter_type = 'emergency department' then e.encounter_id else null end) as emergency_department_count
       , count(distinct case when e.encounter_type = 'outpatient radiology' then e.encounter_id else null end) as outpatient_radiology_count
       , count(distinct case when e.encounter_type = 'outpatient pt/ot/st' then e.encounter_id else null end) as outpatient_pt_ot_st_count
-      , count(distinct case when e.encounter_type = 'outpatient hospice' then e.encounter_id else null end) as outpatient_hospice_count
+      , count(distinct case when e.encounter_type = 'home hospice' then e.encounter_id else null end) as home_hospice_count
       , count(distinct case when e.encounter_type = 'urgent care' then e.encounter_id else null end) as urgent_care_count
       , count(distinct case when e.encounter_type = 'outpatient hospital or clinic' then e.encounter_id else null end) as outpatient_hospital_or_clinic_count
       , count(distinct case when e.encounter_type = 'home health' then e.encounter_id else null end) as home_health_count
@@ -61,7 +61,7 @@ with subset as (
       , count(distinct case when e.encounter_type = 'office visit pt/ot/st' then e.encounter_id else null end) as office_visit_pt_ot_st_count
       , count(distinct case when e.encounter_type = 'office visit injections' then e.encounter_id else null end) as office_visit_injections_count
       , count(distinct case when e.encounter_type = 'acute inpatient' then e.encounter_id else null end) as acute_inpatient_count
-      , count(distinct case when e.encounter_type = 'inpatient hospice' then e.encounter_id else null end) as inpatient_hospice_count
+      , count(distinct case when e.encounter_type = 'facility hospice' then e.encounter_id else null end) as facility_hospice_count
       , count(distinct case when e.encounter_type = 'inpatient psych' then e.encounter_id else null end) as inpatient_psych_count
       , count(distinct case when e.encounter_type = 'inpatient rehabilitation' then e.encounter_id else null end) as inpatient_rehabilitation_count
       , count(distinct case when e.encounter_type = 'inpatient skilled nursing' then e.encounter_id else null end) as inpatient_skilled_nursing_count
@@ -77,7 +77,7 @@ with subset as (
       , sum(case when e.encounter_type = 'emergency department' then mc.paid_amount else 0 end) as emergency_department_paid
       , sum(case when e.encounter_type = 'outpatient radiology' then mc.paid_amount else 0 end) as outpatient_radiology_paid
       , sum(case when e.encounter_type = 'outpatient pt/ot/st' then mc.paid_amount else 0 end) as outpatient_pt_ot_st_paid
-      , sum(case when e.encounter_type = 'outpatient hospice' then mc.paid_amount else 0 end) as outpatient_hospice_paid
+      , sum(case when e.encounter_type = 'home hospice' then mc.paid_amount else 0 end) as home_hospice_paid
       , sum(case when e.encounter_type = 'urgent care' then mc.paid_amount else 0 end) as urgent_care_paid
       , sum(case when e.encounter_type = 'outpatient hospital or clinic' then mc.paid_amount else 0 end) as outpatient_hospital_or_clinic_paid
       , sum(case when e.encounter_type = 'home health' then mc.paid_amount else 0 end) as home_health_paid
@@ -98,7 +98,7 @@ with subset as (
       , sum(case when e.encounter_type = 'office visit pt/ot/st' then mc.paid_amount else 0 end) as office_visit_pt_ot_st_paid
       , sum(case when e.encounter_type = 'office visit injections' then mc.paid_amount else 0 end) as office_visit_injections_paid
       , sum(case when e.encounter_type = 'acute inpatient' then mc.paid_amount else 0 end) as acute_inpatient_paid
-      , sum(case when e.encounter_type = 'inpatient hospice' then mc.paid_amount else 0 end) as inpatient_hospice_paid
+      , sum(case when e.encounter_type = 'facility hospice' then mc.paid_amount else 0 end) as facility_hospice_paid
       , sum(case when e.encounter_type = 'inpatient psych' then mc.paid_amount else 0 end) as inpatient_psych_paid
       , sum(case when e.encounter_type = 'inpatient rehabilitation' then mc.paid_amount else 0 end) as inpatient_rehabilitation_paid
       , sum(case when e.encounter_type = 'inpatient skilled nursing' then mc.paid_amount else 0 end) as inpatient_skilled_nursing_paid
@@ -183,7 +183,7 @@ order by mm.person_id, mm.year_nbr) as benchmark_key
 , case when e.emergency_department_paid < 0 then 0 else coalesce(e.emergency_department_paid, 0) end as emergency_department_paid_amount
 , case when e.outpatient_radiology_paid < 0 then 0 else coalesce(e.outpatient_radiology_paid, 0) end as outpatient_radiology_paid_amount
 , case when e.outpatient_pt_ot_st_paid < 0 then 0 else coalesce(e.outpatient_pt_ot_st_paid, 0) end as outpatient_pt_ot_st_paid_amount
-, case when e.outpatient_hospice_paid < 0 then 0 else coalesce(e.outpatient_hospice_paid, 0) end as outpatient_hospice_paid_amount
+, case when e.home_hospice_paid < 0 then 0 else coalesce(e.home_hospice_paid, 0) end as home_hospice_paid_amount
 , case when e.urgent_care_paid < 0 then 0 else coalesce(e.urgent_care_paid, 0) end as urgent_care_paid_amount
 , case when e.outpatient_hospital_or_clinic_paid < 0 then 0 else coalesce(e.outpatient_hospital_or_clinic_paid, 0) end as outpatient_hospital_or_clinic_paid_amount
 , case when e.home_health_paid < 0 then 0 else coalesce(e.home_health_paid, 0) end as home_health_paid_amount
@@ -204,7 +204,7 @@ order by mm.person_id, mm.year_nbr) as benchmark_key
 , case when e.office_visit_pt_ot_st_paid < 0 then 0 else coalesce(e.office_visit_pt_ot_st_paid, 0) end as office_visit_pt_ot_st_paid_amount
 , case when e.office_visit_injections_paid < 0 then 0 else coalesce(e.office_visit_injections_paid, 0) end as office_visit_injections_paid_amount
 , case when e.acute_inpatient_paid < 0 then 0 else coalesce(e.acute_inpatient_paid, 0) end as acute_inpatient_paid_amount
-, case when e.inpatient_hospice_paid < 0 then 0 else coalesce(e.inpatient_hospice_paid, 0) end as inpatient_hospice_paid_amount
+, case when e.facility_hospice_paid < 0 then 0 else coalesce(e.facility_hospice_paid, 0) end as facility_hospice_paid_amount
 , case when e.inpatient_psych_paid < 0 then 0 else coalesce(e.inpatient_psych_paid, 0) end as inpatient_psych_paid_amount
 , case when e.inpatient_rehabilitation_paid < 0 then 0 else coalesce(e.inpatient_rehabilitation_paid, 0) end as inpatient_rehabilitation_paid_amount
 , case when e.inpatient_skilled_nursing_paid < 0 then 0 else coalesce(e.inpatient_skilled_nursing_paid, 0) end as inpatient_skilled_nursing_paid_amount
@@ -218,7 +218,7 @@ order by mm.person_id, mm.year_nbr) as benchmark_key
 , coalesce(e.emergency_department_count, 0) as emergency_department_count
 , coalesce(e.outpatient_radiology_count, 0) as outpatient_radiology_count
 , coalesce(e.outpatient_pt_ot_st_count, 0) as outpatient_pt_ot_st_count
-, coalesce(e.outpatient_hospice_count, 0) as outpatient_hospice_count
+, coalesce(e.home_hospice_count, 0) as home_hospice_count
 , coalesce(e.urgent_care_count, 0) as urgent_care_count
 , coalesce(e.outpatient_hospital_or_clinic_count, 0) as outpatient_hospital_or_clinic_count
 , coalesce(e.home_health_count, 0) as home_health_count
@@ -239,7 +239,7 @@ order by mm.person_id, mm.year_nbr) as benchmark_key
 , coalesce(e.office_visit_pt_ot_st_count, 0) as office_visit_pt_ot_st_count
 , coalesce(e.office_visit_injections_count, 0) as office_visit_injections_count
 , coalesce(e.acute_inpatient_count, 0) as acute_inpatient_count
-, coalesce(e.inpatient_hospice_count, 0) as inpatient_hospice_count
+, coalesce(e.facility_hospice_count, 0) as facility_hospice_count
 , coalesce(e.inpatient_psych_count, 0) as inpatient_psych_count
 , coalesce(e.inpatient_rehabilitation_count, 0) as inpatient_rehabilitation_count
 , coalesce(e.inpatient_skilled_nursing_count, 0) as inpatient_skilled_nursing_count

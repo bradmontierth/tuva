@@ -12,7 +12,7 @@ with icd10_release_year as (
 , encounter_date as (
   select distinct old_encounter_id
   , start_date as encounter_start_date
-  from {{ ref('outpatient_hospice__generate_encounter_id') }}
+  from {{ ref('home_hospice__generate_encounter_id') }}
 )
 
 , detail_values as (
@@ -31,7 +31,7 @@ order by stg.claim_type, stg.start_date) as encounter_row_number --institutional
     and
     stg.data_source = cli.data_source
     and
-    cli.encounter_type = 'outpatient hospice'
+    cli.encounter_type = 'home hospice'
     and
     cli.claim_line_attribution_number = 1
     inner join encounter_date as d on cli.old_encounter_id = d.old_encounter_id

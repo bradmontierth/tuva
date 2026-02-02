@@ -1,0 +1,21 @@
+version: 2
+
+seeds:
+  - name: encounters__encounter_type_priority
+    description: Encounter type priority ordering used for deterministic encounter attribution.
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix', None) != None -%}
+          {{ var('tuva_schema_prefix') }}_claims_preprocessing
+        {%- else -%}
+          claims_preprocessing
+        {%- endif -%}
+      column_types:
+        encounter_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        priority_number: integer
+    columns:
+      - name: encounter_type
+        description: Encounter type label.
+      - name: priority_number
+        description: Lower number wins when claim lines qualify for multiple encounter types.

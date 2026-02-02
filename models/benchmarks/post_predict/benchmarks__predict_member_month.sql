@@ -33,7 +33,7 @@ with expected_member_month as (
         , p.dme_orphaned_paid_amount_pred
         , p.emergency_department_paid_amount_pred
         , p.home_health_paid_amount_pred
-        , p.inpatient_hospice_paid_amount_pred
+        , p.inpatient_hospice_paid_amount_pred as facility_hospice_paid_amount_pred
         , 0 as inpatient_long_term_acute_care_paid_amount_pred  -- place holder
         , p.inpatient_psych_paid_amount_pred
         , p.inpatient_rehabilitation_paid_amount_pred
@@ -47,7 +47,7 @@ with expected_member_month as (
         , p.office_visit_radiology_paid_amount_pred
         , p.office_visit_surgery_paid_amount_pred
         , p.orphaned_claim_paid_amount_pred
-        , p.outpatient_hospice_paid_amount_pred
+        , p.outpatient_hospice_paid_amount_pred as home_hospice_paid_amount_pred
         , p.outpatient_hospital_or_clinic_paid_amount_pred
         , p.outpatient_injections_paid_amount_pred
         , p.outpatient_psych_paid_amount_pred
@@ -69,7 +69,7 @@ with expected_member_month as (
         , p.dme_orphaned_count_pred as dme_orphaned_encounter_count_pred
         , p.emergency_department_count_pred as emergency_department_encounter_count_pred
         , p.home_health_count_pred as home_health_encounter_count_pred
-        , p.inpatient_hospice_count_pred as inpatient_hospice_encounter_count_pred
+        , p.inpatient_hospice_count_pred as facility_hospice_encounter_count_pred
         , 0 as inpatient_long_term_acute_care_encounter_count_pred  -- place holder
         , p.inpatient_psych_count_pred as inpatient_psych_encounter_count_pred
         , p.inpatient_rehabilitation_count_pred as inpatient_rehabilitation_encounter_count_pred
@@ -83,7 +83,7 @@ with expected_member_month as (
         , p.office_visit_radiology_count_pred as office_visit_radiology_encounter_count_pred
         , p.office_visit_surgery_count_pred as office_visit_surgery_encounter_count_pred
         , p.orphaned_claim_count_pred as orphaned_claim_encounter_count_pred
-        , p.outpatient_hospice_count_pred as outpatient_hospice_encounter_count_pred
+        , p.outpatient_hospice_count_pred as home_hospice_encounter_count_pred
         , p.outpatient_hospital_or_clinic_count_pred as outpatient_hospital_or_clinic_encounter_count_pred
         , p.outpatient_injections_count_pred as outpatient_injections_encounter_count_pred
         , p.outpatient_psych_count_pred as outpatient_psych_encounter_count_pred
@@ -122,7 +122,7 @@ with expected_member_month as (
       , sum(case when mc.encounter_type = 'dme - orphaned' then mc.paid_amount else 0 end) as dme_orphaned_paid_amount_actual
       , sum(case when mc.encounter_type = 'emergency department' then mc.paid_amount else 0 end) as emergency_department_paid_amount_actual
       , sum(case when mc.encounter_type = 'home health' then mc.paid_amount else 0 end) as home_health_paid_amount_actual
-      , sum(case when mc.encounter_type = 'inpatient hospice' then mc.paid_amount else 0 end) as inpatient_hospice_paid_amount_actual
+      , sum(case when mc.encounter_type = 'facility hospice' then mc.paid_amount else 0 end) as facility_hospice_paid_amount_actual
       , sum(case when mc.encounter_type = 'inpatient long term acute care' then mc.paid_amount else 0 end) as inpatient_long_term_acute_care_paid_amount_actual
       , sum(case when mc.encounter_type = 'inpatient psych' then mc.paid_amount else 0 end) as inpatient_psych_paid_amount_actual
       , sum(case when mc.encounter_type = 'inpatient rehabilitation' then mc.paid_amount else 0 end) as inpatient_rehabilitation_paid_amount_actual
@@ -136,7 +136,7 @@ with expected_member_month as (
       , sum(case when mc.encounter_type = 'office visit radiology' then mc.paid_amount else 0 end) as office_visit_radiology_paid_amount_actual
       , sum(case when mc.encounter_type = 'office visit surgery' then mc.paid_amount else 0 end) as office_visit_surgery_paid_amount_actual
       , sum(case when mc.encounter_type = 'orphaned claim' then mc.paid_amount else 0 end) as orphaned_claim_paid_amount_actual
-      , sum(case when mc.encounter_type = 'outpatient hospice' then mc.paid_amount else 0 end) as outpatient_hospice_paid_amount_actual
+      , sum(case when mc.encounter_type = 'home hospice' then mc.paid_amount else 0 end) as home_hospice_paid_amount_actual
       , sum(case when mc.encounter_type = 'outpatient hospital or clinic' then mc.paid_amount else 0 end) as outpatient_hospital_or_clinic_paid_amount_actual
       , sum(case when mc.encounter_type = 'outpatient injections' then mc.paid_amount else 0 end) as outpatient_injections_paid_amount_actual
       , sum(case when mc.encounter_type = 'outpatient psych' then mc.paid_amount else 0 end) as outpatient_psych_paid_amount_actual
@@ -187,7 +187,7 @@ with expected_member_month as (
       , count(distinct case when e.encounter_type = 'dme - orphaned' then e.encounter_id else null end) as dme_orphaned_encounter_count
       , count(distinct case when e.encounter_type = 'emergency department' then e.encounter_id else null end) as emergency_department_encounter_count
       , count(distinct case when e.encounter_type = 'home health' then e.encounter_id else null end) as home_health_encounter_count
-      , count(distinct case when e.encounter_type = 'inpatient hospice' then e.encounter_id else null end) as inpatient_hospice_encounter_count
+      , count(distinct case when e.encounter_type = 'facility hospice' then e.encounter_id else null end) as facility_hospice_encounter_count
       , count(distinct case when e.encounter_type = 'inpatient long term acute care' then e.encounter_id else null end) as inpatient_long_term_acute_care_encounter_count
       , count(distinct case when e.encounter_type = 'inpatient psych' then e.encounter_id else null end) as inpatient_psych_encounter_count
       , count(distinct case when e.encounter_type = 'inpatient rehabilitation' then e.encounter_id else null end) as inpatient_rehabilitation_encounter_count
@@ -201,7 +201,7 @@ with expected_member_month as (
       , count(distinct case when e.encounter_type = 'office visit radiology' then e.encounter_id else null end) as office_visit_radiology_encounter_count
       , count(distinct case when e.encounter_type = 'office visit surgery' then e.encounter_id else null end) as office_visit_surgery_encounter_count
       , count(distinct case when e.encounter_type = 'orphaned claim' then e.encounter_id else null end) as orphaned_claim_encounter_count
-      , count(distinct case when e.encounter_type = 'outpatient hospice' then e.encounter_id else null end) as outpatient_hospice_encounter_count
+      , count(distinct case when e.encounter_type = 'home hospice' then e.encounter_id else null end) as home_hospice_encounter_count
       , count(distinct case when e.encounter_type = 'outpatient hospital or clinic' then e.encounter_id else null end) as outpatient_hospital_or_clinic_encounter_count
       , count(distinct case when e.encounter_type = 'outpatient injections' then e.encounter_id else null end) as outpatient_injections_encounter_count
       , count(distinct case when e.encounter_type = 'outpatient psych' then e.encounter_id else null end) as outpatient_psych_encounter_count
@@ -300,7 +300,7 @@ select
  , coalesce(c.dme_orphaned_paid_amount_actual, 0) as actual_dme_orphaned_paid_amount
  , coalesce(c.emergency_department_paid_amount_actual, 0) as actual_emergency_department_paid_amount
  , coalesce(c.home_health_paid_amount_actual, 0) as actual_home_health_paid_amount
- , coalesce(c.inpatient_hospice_paid_amount_actual, 0) as actual_inpatient_hospice_paid_amount
+ , coalesce(c.facility_hospice_paid_amount_actual, 0) as actual_facility_hospice_paid_amount
  , coalesce(c.inpatient_long_term_acute_care_paid_amount_actual, 0) as actual_inpatient_long_term_acute_care_paid_amount
  , coalesce(c.inpatient_psych_paid_amount_actual, 0) as actual_inpatient_psych_paid_amount
  , coalesce(c.inpatient_rehabilitation_paid_amount_actual, 0) as actual_inpatient_rehabilitation_paid_amount
@@ -314,7 +314,7 @@ select
  , coalesce(c.office_visit_radiology_paid_amount_actual, 0) as actual_office_visit_radiology_paid_amount
  , coalesce(c.office_visit_surgery_paid_amount_actual, 0) as actual_office_visit_surgery_paid_amount
  , coalesce(c.orphaned_claim_paid_amount_actual, 0) as actual_orphaned_claim_paid_amount
- , coalesce(c.outpatient_hospice_paid_amount_actual, 0) as actual_outpatient_hospice_paid_amount
+ , coalesce(c.home_hospice_paid_amount_actual, 0) as actual_home_hospice_paid_amount
  , coalesce(c.outpatient_hospital_or_clinic_paid_amount_actual, 0) as actual_outpatient_hospital_or_clinic_paid_amount
  , coalesce(c.outpatient_injections_paid_amount_actual, 0) as actual_outpatient_injections_paid_amount
  , coalesce(c.outpatient_psych_paid_amount_actual, 0) as actual_outpatient_psych_paid_amount
@@ -334,7 +334,7 @@ select
  , coalesce(emm.dme_orphaned_paid_amount_pred, 0) as expected_dme_orphaned_paid_amount
  , coalesce(emm.emergency_department_paid_amount_pred, 0) as expected_emergency_department_paid_amount
  , coalesce(emm.home_health_paid_amount_pred, 0) as expected_home_health_paid_amount
- , coalesce(emm.inpatient_hospice_paid_amount_pred, 0) as expected_inpatient_hospice_paid_amount
+ , coalesce(emm.facility_hospice_paid_amount_pred, 0) as expected_facility_hospice_paid_amount
  , coalesce(emm.inpatient_long_term_acute_care_paid_amount_pred, 0) as expected_inpatient_long_term_acute_care_paid_amount
  , coalesce(emm.inpatient_psych_paid_amount_pred, 0) as expected_inpatient_psych_paid_amount
  , coalesce(emm.inpatient_rehabilitation_paid_amount_pred, 0) as expected_inpatient_rehabilitation_paid_amount
@@ -348,7 +348,7 @@ select
  , coalesce(emm.office_visit_radiology_paid_amount_pred, 0) as expected_office_visit_radiology_paid_amount
  , coalesce(emm.office_visit_surgery_paid_amount_pred, 0) as expected_office_visit_surgery_paid_amount
  , coalesce(emm.orphaned_claim_paid_amount_pred, 0) as expected_orphaned_claim_paid_amount
- , coalesce(emm.outpatient_hospice_paid_amount_pred, 0) as expected_outpatient_hospice_paid_amount
+ , coalesce(emm.home_hospice_paid_amount_pred, 0) as expected_home_hospice_paid_amount
  , coalesce(emm.outpatient_hospital_or_clinic_paid_amount_pred, 0) as expected_outpatient_hospital_or_clinic_paid_amount
  , coalesce(emm.outpatient_injections_paid_amount_pred, 0) as expected_outpatient_injections_paid_amount
  , coalesce(emm.outpatient_psych_paid_amount_pred, 0) as expected_outpatient_psych_paid_amount
@@ -368,7 +368,7 @@ select
  , coalesce(enc.dme_orphaned_encounter_count, 0) as actual_dme_orphaned_encounter_count
  , coalesce(enc.emergency_department_encounter_count, 0) as actual_emergency_department_encounter_count
  , coalesce(enc.home_health_encounter_count, 0) as actual_home_health_encounter_count
- , coalesce(enc.inpatient_hospice_encounter_count, 0) as actual_inpatient_hospice_encounter_count
+ , coalesce(enc.facility_hospice_encounter_count, 0) as actual_facility_hospice_encounter_count
  , coalesce(enc.inpatient_long_term_acute_care_encounter_count, 0) as actual_inpatient_long_term_acute_care_encounter_count
  , coalesce(enc.inpatient_psych_encounter_count, 0) as actual_inpatient_psych_encounter_count
  , coalesce(enc.inpatient_rehabilitation_encounter_count, 0) as actual_inpatient_rehabilitation_encounter_count
@@ -382,7 +382,7 @@ select
  , coalesce(enc.office_visit_radiology_encounter_count, 0) as actual_office_visit_radiology_encounter_count
  , coalesce(enc.office_visit_surgery_encounter_count, 0) as actual_office_visit_surgery_encounter_count
  , coalesce(enc.orphaned_claim_encounter_count, 0) as actual_orphaned_claim_encounter_count
- , coalesce(enc.outpatient_hospice_encounter_count, 0) as actual_outpatient_hospice_encounter_count
+ , coalesce(enc.home_hospice_encounter_count, 0) as actual_home_hospice_encounter_count
  , coalesce(enc.outpatient_hospital_or_clinic_encounter_count, 0) as actual_outpatient_hospital_or_clinic_encounter_count
  , coalesce(enc.outpatient_injections_encounter_count, 0) as actual_outpatient_injections_encounter_count
  , coalesce(enc.outpatient_psych_encounter_count, 0) as actual_outpatient_psych_encounter_count
@@ -402,7 +402,7 @@ select
  , coalesce(emm.dme_orphaned_encounter_count_pred, 0) as expected_dme_orphaned_encounter_count
  , coalesce(emm.emergency_department_encounter_count_pred, 0) as expected_emergency_department_encounter_count
  , coalesce(emm.home_health_encounter_count_pred, 0) as expected_home_health_encounter_count
- , coalesce(emm.inpatient_hospice_encounter_count_pred, 0) as expected_inpatient_hospice_encounter_count
+ , coalesce(emm.facility_hospice_encounter_count_pred, 0) as expected_facility_hospice_encounter_count
  , coalesce(emm.inpatient_long_term_acute_care_encounter_count_pred, 0) as expected_inpatient_long_term_acute_care_encounter_count
  , coalesce(emm.inpatient_psych_encounter_count_pred, 0) as expected_inpatient_psych_encounter_count
  , coalesce(emm.inpatient_rehabilitation_encounter_count_pred, 0) as expected_inpatient_rehabilitation_encounter_count
@@ -416,7 +416,7 @@ select
  , coalesce(emm.office_visit_radiology_encounter_count_pred, 0) as expected_office_visit_radiology_encounter_count
  , coalesce(emm.office_visit_surgery_encounter_count_pred, 0) as expected_office_visit_surgery_encounter_count
  , coalesce(emm.orphaned_claim_encounter_count_pred, 0) as expected_orphaned_claim_encounter_count
- , coalesce(emm.outpatient_hospice_encounter_count_pred, 0) as expected_outpatient_hospice_encounter_count
+ , coalesce(emm.home_hospice_encounter_count_pred, 0) as expected_home_hospice_encounter_count
  , coalesce(emm.outpatient_hospital_or_clinic_encounter_count_pred, 0) as expected_outpatient_hospital_or_clinic_encounter_count
  , coalesce(emm.outpatient_injections_encounter_count_pred, 0) as expected_outpatient_injections_encounter_count
  , coalesce(emm.outpatient_psych_encounter_count_pred, 0) as expected_outpatient_psych_encounter_count

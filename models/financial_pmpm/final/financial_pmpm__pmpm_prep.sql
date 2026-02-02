@@ -36,7 +36,7 @@ with combine as (
     , coalesce(c.durable_medical_equipment_paid, 0) as durable_medical_equipment_paid
     , coalesce(c.emergency_department_paid, 0) as emergency_department_paid
     , coalesce(c.home_health_paid, 0) as home_health_paid
-    , coalesce(c.inpatient_hospice_paid, 0) as inpatient_hospice_paid
+    , coalesce(c.facility_hospice_paid, 0) as facility_hospice_paid
     , coalesce(c.inpatient_psychiatric_paid, 0) as inpatient_psychiatric_paid
     , coalesce(c.inpatient_rehabilitation_paid, 0) as inpatient_rehabilitation_paid
     , coalesce(c.lab_paid, 0) as lab_paid
@@ -47,7 +47,7 @@ with combine as (
     , coalesce(c.office_based_surgery_paid, 0) as office_based_surgery_paid
     , coalesce(c.office_based_visit_paid, 0) as office_based_visit_paid
     , coalesce(c.other_paid, 0) as other_paid_2
-    , coalesce(c.outpatient_hospice_paid, 0) as outpatient_hospice_paid
+    , coalesce(c.home_hospice_paid, 0) as home_hospice_paid
     , coalesce(c.outpatient_hospital_or_clinic_paid, 0) as outpatient_hospital_or_clinic_paid
     , coalesce(c.outpatient_ptotst_paid, 0) as outpatient_pt_ot_st_paid
     , coalesce(c.outpatient_psychiatric_paid, 0) as outpatient_psychiatric_paid
@@ -75,7 +75,7 @@ with combine as (
     , coalesce(e.durable_medical_equipment_allowed, 0) as durable_medical_equipment_allowed
     , coalesce(e.emergency_department_allowed, 0) as emergency_department_allowed
     , coalesce(e.home_health_allowed, 0) as home_health_allowed
-    , coalesce(e.inpatient_hospice_allowed, 0) as inpatient_hospice_allowed
+    , coalesce(e.facility_hospice_allowed, 0) as facility_hospice_allowed
     , coalesce(e.inpatient_psychiatric_allowed, 0) as inpatient_psychiatric_allowed
     , coalesce(e.inpatient_rehabilitation_allowed, 0) as inpatient_rehabilitation_allowed
     , coalesce(e.lab_allowed, 0) as lab_allowed
@@ -86,7 +86,7 @@ with combine as (
     , coalesce(e.office_based_surgery_allowed, 0) as office_based_surgery_allowed
     , coalesce(e.office_based_visit_allowed, 0) as office_based_visit_allowed
     , coalesce(e.other_allowed, 0) as other_allowed_2
-    , coalesce(e.outpatient_hospice_allowed, 0) as outpatient_hospice_allowed
+    , coalesce(e.home_hospice_allowed, 0) as home_hospice_allowed
     , coalesce(e.outpatient_hospital_or_clinic_allowed, 0) as outpatient_hospital_or_clinic_allowed
     , coalesce(e.outpatient_ptotst_allowed, 0) as outpatient_pt_ot_st_allowed
     , coalesce(e.outpatient_psychiatric_allowed, 0) as outpatient_psychiatric_allowed

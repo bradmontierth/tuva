@@ -30,3 +30,7 @@ inner join {{ ref('service_category__stg_office_based') }} as prof
   and med.data_source = prof.data_source
 where
   (hcpcs_code between '10021' and '69999')
+  and hcpcs_code not in (
+    '96360', '96361', '96365', '96366', '96367', '96368', '96369', '96370',
+    '96371', '96372', '96373', '96374', '96375', '96376', '96379'
+  )

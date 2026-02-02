@@ -5,12 +5,10 @@
 
 select distinct
     med.claim_id
-  , med.claim_line_number
   , med.data_source
-  , med.claim_line_id
   , 'inpatient' as service_category_1
-  , 'inpatient hospice' as service_category_2
-  , 'inpatient hospice' as service_category_3
+  , 'facility hospice' as service_category_2
+  , 'facility hospice' as service_category_3
   , '{{ this.name }}' as source_model_name
   , '{{ var('tuva_last_run') }}' as tuva_last_run
 from {{ ref('service_category__stg_medical_claim') }} as med
@@ -18,4 +16,4 @@ from {{ ref('service_category__stg_medical_claim') }} as med
   on med.claim_id = prof.claim_id
   and med.claim_line_number = prof.claim_line_number
   and med.data_source = prof.data_source
-where place_of_service_code in ('34')
+where med.hcpcs_code in ('Q5005', 'Q5006', 'Q5007', 'Q5008', 'Q5009', 'Q5010')

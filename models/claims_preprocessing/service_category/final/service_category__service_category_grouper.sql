@@ -9,16 +9,34 @@ with service_category_1_mapping as (
         , a.claim_line_number
         , a.data_source
         , a.claim_type
-        , case when s.service_category_1 is null and b.service_category_1 is not null then 'Service cat value not in seed table'
-            else b.service_category_1
-          end as service_category_1
-        , case when s.service_category_2 is null and b.service_category_2 is not null then 'Service cat value not in seed table'
-            else s.service_category_2
-          end as service_category_2
-        , case
-            when s.service_category_3 is null and b.service_category_3 is not null then 'Service cat value not in seed table'
-            else s.service_category_3
-          end as service_category_3
+        , coalesce(s.service_category_1, b.service_category_1) as service_category_1
+        , coalesce(s.service_category_2, b.service_category_2) as service_category_2
+        , coalesce(s.service_category_3, b.service_category_3) as service_category_3
+        , b.service_category_2 as original_service_cat_2
+        , b.service_category_3 as original_service_cat_3
+        , s.priority
+        , '{{ var('tuva_last_run') }}' as tuva_last_run
+        , b.source_model_name
+    from {{ ref('service_category__stg_medical_claim') }} as a
+    left outer join {{ ref('service_category__combined_professional_header_level') }} as b
+      on a.claim_id = b.claim_id
+      and a.data_source = b.data_source
+    left outer join {{ ref('service_category__service_categories') }} as s
+      on b.service_category_1 = s.service_category_1
+      and b.service_category_2 = s.service_category_2
+      and b.service_category_3 = s.service_category_3
+    where a.claim_type = 'professional'
+
+    union all
+
+    select distinct
+        a.claim_id
+        , a.claim_line_number
+        , a.data_source
+        , a.claim_type
+        , coalesce(s.service_category_1, b.service_category_1) as service_category_1
+        , coalesce(s.service_category_2, b.service_category_2) as service_category_2
+        , coalesce(s.service_category_3, b.service_category_3) as service_category_3
         , b.service_category_2 as original_service_cat_2
         , b.service_category_3 as original_service_cat_3
         , s.priority
@@ -42,16 +60,9 @@ with service_category_1_mapping as (
         , a.claim_line_number
         , a.data_source
         , a.claim_type
-        , case when s.service_category_1 is null and b.service_category_1 is not null then 'Service cat value not in seed table'
-            else b.service_category_1
-          end as service_category_1
-        , case when s.service_category_2 is null and b.service_category_2 is not null then 'Service cat value not in seed table'
-            else s.service_category_2
-          end as service_category_2
-        , case
-            when s.service_category_3 is null and b.service_category_3 is not null then 'Service cat value not in seed table'
-            else s.service_category_3
-          end as service_category_3
+        , coalesce(s.service_category_1, b.service_category_1) as service_category_1
+        , coalesce(s.service_category_2, b.service_category_2) as service_category_2
+        , coalesce(s.service_category_3, b.service_category_3) as service_category_3
         , b.service_category_2 as original_service_cat_2
         , b.service_category_3 as original_service_cat_3
         , s.priority
@@ -74,16 +85,9 @@ with service_category_1_mapping as (
         , a.claim_line_number
         , a.data_source
         , a.claim_type
-        , case when s.service_category_1 is null and b.service_category_1 is not null then 'Service cat value not in seed table'
-            else b.service_category_1
-          end as service_category_1
-        , case when s.service_category_2 is null and b.service_category_2 is not null then 'Service cat value not in seed table'
-            else s.service_category_2
-          end as service_category_2
-        , case
-            when s.service_category_3 is null and b.service_category_3 is not null then 'Service cat value not in seed table'
-            else s.service_category_3
-          end as service_category_3
+        , coalesce(s.service_category_1, b.service_category_1) as service_category_1
+        , coalesce(s.service_category_2, b.service_category_2) as service_category_2
+        , coalesce(s.service_category_3, b.service_category_3) as service_category_3
         , b.service_category_2 as original_service_cat_2
         , b.service_category_3 as original_service_cat_3
         , s.priority
