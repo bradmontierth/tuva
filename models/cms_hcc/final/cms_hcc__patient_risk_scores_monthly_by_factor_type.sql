@@ -17,7 +17,6 @@ with seed_adjustment_rates as (
 
     select
           person_id
-        , payer
         , factor_type
         , coefficient
         , risk_model_code
@@ -36,13 +35,11 @@ with seed_adjustment_rates as (
 
     select
           person_id
-        , payer
         , cast({{ substring('year_month', 1, 4) }} as integer) as eligible_year
         , count(1) as member_months
     from {{ ref('cms_hcc__stg_core__member_months') }}
     group by
           person_id
-        , payer
         , cast({{ substring('year_month', 1, 4) }} as integer)
 )
 
@@ -50,7 +47,6 @@ with seed_adjustment_rates as (
 
     select
           person_id
-        , payer
         , factor_type
         , risk_model_code
         , enrollment_status
@@ -64,7 +60,6 @@ with seed_adjustment_rates as (
     from risk_factors
     group by
           person_id
-        , payer
         , factor_type
         , risk_model_code
         , enrollment_status
@@ -94,7 +89,6 @@ with seed_adjustment_rates as (
 
     select
           raw_score.person_id
-        , raw_score.payer
         , raw_score.factor_type
         , raw_score.risk_model_code
         , raw_score.enrollment_status
@@ -138,7 +132,6 @@ with seed_adjustment_rates as (
 
     select
           person_id
-        , payer
         , factor_type
         , risk_model_code
         , enrollment_status
@@ -159,7 +152,6 @@ with seed_adjustment_rates as (
 
     select
           person_id
-        , payer
         , factor_type
         , risk_model_code
         , enrollment_status
@@ -179,7 +171,6 @@ with seed_adjustment_rates as (
 , blended as (
 select
           person_id
-        , payer
         , factor_type
         , risk_model_code
         , enrollment_status
@@ -196,7 +187,6 @@ select
 from payment
 group by
           person_id
-        , payer
         , factor_type
         , risk_model_code
         , enrollment_status
@@ -211,7 +201,6 @@ group by
 
     select
           blended.person_id
-        , blended.payer
         , blended.factor_type
         , blended.risk_model_code
         , blended.enrollment_status
@@ -230,7 +219,6 @@ group by
     from blended
     left outer join member_months
             on blended.person_id = member_months.person_id
-            and blended.payer = member_months.payer
             and blended.payment_year = member_months.eligible_year
 )
 
@@ -238,7 +226,6 @@ group by
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
-        , cast(payer as {{ dbt.type_string() }}) as payer
         , cast(factor_type as {{ dbt.type_string() }}) as factor_type
         , cast(risk_model_code as {{ dbt.type_string() }}) as risk_model_code
         , cast(enrollment_status as {{ dbt.type_string() }}) as enrollment_status
@@ -265,7 +252,6 @@ group by
 
 select
       person_id
-    , payer
     , factor_type
     , risk_model_code
     , enrollment_status

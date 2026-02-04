@@ -45,7 +45,6 @@ inner join hcc_diagnosis as diag
 , get_risk_code as (
 select distinct
       person_id
-    , payer
     , payment_year
     , model_version
     , risk_model_code
@@ -59,7 +58,6 @@ where lower(factor_type) = 'demographic'
 select distinct
     person_id
   , claim_id
-  , payer
 from {{ ref('cms_hcc__int_eligible_conditions') }}
 )
 
@@ -143,13 +141,11 @@ left outer join chronic_hccs as chronic
   and {{ date_part('year', 'sus.recorded_date') }} = chronic.payment_year - 1
 left outer join get_risk_code as rcode
   on sus.person_id = rcode.person_id
-  and sus.payer = rcode.payer
   and {{ date_part('year', 'sus.recorded_date') }} = rcode.payment_year - 1
   and sus.model_version = rcode.model_version
   and rcode.month_order = 1
 left outer join eligible_claims as elig
   on sus.person_id = elig.person_id
-  and sus.payer = elig.payer
   and sus.claim_id = elig.claim_id
 left outer join medical_claims as med
   on sus.person_id = med.person_id

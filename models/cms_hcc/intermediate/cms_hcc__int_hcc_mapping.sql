@@ -15,7 +15,6 @@ with conditions as (
 
     select
           person_id
-        , payer
         , condition_code
         , payment_year
         , collection_start_date
@@ -56,7 +55,6 @@ with conditions as (
 
     select distinct
           conditions.person_id
-        , conditions.payer
         , conditions.condition_code
         , conditions.payment_year
         , conditions.collection_start_date
@@ -75,7 +73,6 @@ with conditions as (
 
     select distinct
           conditions.person_id
-        , conditions.payer
         , conditions.condition_code
         , conditions.payment_year
         , conditions.collection_start_date
@@ -102,7 +99,6 @@ with conditions as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
-        , cast(payer as {{ dbt.type_string() }}) as payer
         , cast(condition_code as {{ dbt.type_string() }}) as condition_code
         , cast(hcc_code as {{ dbt.type_string() }}) as hcc_code
         , cast(model_version as {{ dbt.type_string() }}) as model_version
@@ -115,7 +111,6 @@ with conditions as (
 
 select
       person_id
-    , payer
     , condition_code
     , hcc_code
     , model_version

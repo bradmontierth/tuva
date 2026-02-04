@@ -143,6 +143,46 @@ models:
           The payment year the HCC and risk scores are being calculated for.
       - name: tuva_last_run
         description: The date the model was run.
+
+  - name: cms_hcc__patient_payer_monthly
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_cms_hcc{% else %}cms_hcc{%- endif -%}
+      alias: patient_payer_monthly
+      tags: cms_hcc
+      materialized: table
+    description: >
+      Payer breakout for CMS-HCC that preserves person-level scoring outputs while
+      enabling payer-level analysis via an explicit join.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - person_id
+              - payment_year
+              - collection_end_date
+              - payer
+    columns:
+      - name: person_id
+        description: Unique ID for the patient.
+      - name: payer
+        description: Name of the payer (i.e. health insurer) providing coverage.
+      - name: data_source
+        description: User-configured field that indicates the data source.
+      - name: payer_rank
+        description: >
+          Rank of the payer for the person-month, ordered by latest enrollment_end_date.
+      - name: is_primary_payer
+        description: True when payer_rank = 1.
+      - name: payment_year
+        description: >
+          The payment year the HCC and risk scores are being calculated for.
+      - name: collection_start_date
+        description: Start date of the collection month.
+      - name: collection_end_date
+        description: End date of the collection month.
+      - name: tuva_last_run
+        description: The date the model was run.
   - name: cms_hcc__patient_risk_scores_monthly_by_factor_type
     config:
       schema: |
@@ -160,7 +200,6 @@ models:
             combination_of_columns:
               - person_id
               - payment_year
-              - payer
               - collection_end_date
               - factor_type
     columns:
@@ -214,7 +253,6 @@ models:
             combination_of_columns:
               - person_id
               - payment_year
-              - payer
               - collection_end_date
     columns:
       - name: person_id
@@ -420,7 +458,6 @@ models:
           arguments:
             combination_of_columns:
               - person_id
-              - payer
               - claim_id
               - claim_line_number
               - condition_code
@@ -432,8 +469,6 @@ models:
     columns:
       - name: person_id
         description: Unique ID for the patient.
-      - name: payer
-        description: Name of the payer (i.e. health insurer) providing coverage.
       - name: condition_code
         description: The condition code.
         tests:
@@ -603,11 +638,39 @@ models:
       - name: institutional_status_default
         description: >
           Indicates the input data was missing and a default status was used.
-      - name: model_version
-        description: CMS HCC model version.
+      - name: eligibility_imputed
+        description: >
+          True when eligibility-derived attributes were imputed from the nearest
+          available eligibility month rather than sourced from eligibility for
+          the current month.
       - name: payment_year
         description: >
           The payment year the HCC and risk scores are being calculated for.
+      - name: tuva_last_run
+        description: The date the model was run.
+
+  - name: cms_hcc__int_medicare_enrollment_start
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_cms_hcc{% else %}cms_hcc{%- endif -%}
+      alias: _int_medicare_enrollment_start
+      tags: cms_hcc
+      materialized: table
+    description: >
+      Person-level Medicare Part B enrollment start date, sourced from eligibility
+      when available and inferred from claims otherwise.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - person_id
+    columns:
+      - name: person_id
+        description: Unique ID for the patient.
+      - name: final_start
+        description: Medicare Part B enrollment start date (actual or inferred).
+      - name: start_source
+        description: Source of the Part B start date (actual vs inferred).
       - name: tuva_last_run
         description: The date the model was run.
 

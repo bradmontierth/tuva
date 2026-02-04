@@ -5,7 +5,6 @@
 
 select
       person_id
-    , payer
     , v24_risk_score
     , v28_risk_score
     , blended_risk_score

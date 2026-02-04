@@ -152,7 +152,6 @@ with medical_claims as (
     select distinct
           eligible_claims.claim_id
         , eligible_claims.claim_line_number
-        , eligible_claims.payer
         , eligible_claims.person_id
         , eligible_claims.payment_year
         , eligible_claims.collection_start_date
@@ -171,7 +170,6 @@ with medical_claims as (
     select distinct
           cast(claim_id as {{ dbt.type_string() }}) as claim_id
         , cast(claim_line_number as {{ dbt.type_string() }}) as claim_line_number
-        , cast(payer as {{ dbt.type_string() }}) as payer
         , cast(person_id as {{ dbt.type_string() }}) as person_id
         , cast(code as {{ dbt.type_string() }}) as condition_code
         , cast(payment_year as integer) as payment_year
@@ -185,7 +183,6 @@ select
       person_id
     , claim_id
     , claim_line_number
-    , payer
     , condition_code
     , payment_year
     , collection_start_date
