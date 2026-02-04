@@ -8,6 +8,7 @@ select distinct
     , payer
     , enrollment_start_date
     , enrollment_end_date
+    {{ ensure_optional_column(ref('core__eligibility'), 'medicare_part_b_enrollment_start_date', 'date') }}
     , original_reason_entitlement_code
     , dual_status_code
     , medicare_status_code
