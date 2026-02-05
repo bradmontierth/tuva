@@ -9,3 +9,4 @@ select
     , hcc_code
     , collection_end_date
 from {{ ref('cms_hcc__int_disease_factors') }}
+where model_version = 'CMS-HCC-V24'
