@@ -53,6 +53,7 @@ select e.encounter_id
 , i.discharge_pred_proba_snf
 , i.discharge_pred_proba_transfer_other_facility
 , ef.max_enrollment_flag as enrolled_encounter_flag
+, '{{ var('tuva_last_run') }}' as tuva_last_run
 FROM {{ ref('benchmarks__inpatient_input') }}  e
 inner join inpatient_pred i on e.encounter_id = i.encounter_id
 inner join {{ ref('benchmarks__stg_core__encounter') }} ce on e.encounter_id = ce.encounter_id

@@ -163,4 +163,5 @@ select
     end as metric
     , value
     , metric_type
+    , '{{ var('tuva_last_run') }}' as tuva_last_run
 from labeled

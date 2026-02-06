@@ -4,12 +4,22 @@
     )
 }}
 
-with cte as (
-select distinct person_id
+with enrolled_member_months as (
+select distinct
+  person_id
+, cast(year_month as {{ dbt.type_int() }}) as year_month
+from {{ ref('benchmarks__stg_core__member_months') }}
+)
+
+, cte as (
+select distinct i.person_id
 , hcc_code
 , c.year as year_nbr
 from {{ ref('benchmarks__stg_cms_hcc__int_disease_factors') }} as i
 left outer join {{ ref('benchmarks__stg_reference_data__calendar') }} as c on i.collection_end_date = c.full_date
+inner join enrolled_member_months as mm
+  on i.person_id = mm.person_id
+  and cast(c.year_month_int as {{ dbt.type_int() }}) = mm.year_month
 where hcc_code is not null
 )
 

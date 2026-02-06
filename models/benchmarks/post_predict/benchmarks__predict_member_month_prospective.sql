@@ -68,6 +68,7 @@ select
 {% for base, out_col in count_pairs %}
  , pred.pred_pmpc_{{ base }} as {{ out_col }}
 {% endfor %}
+, '{{ var('tuva_last_run') }}' as tuva_last_run
 
 from {{ ref('benchmarks__predict_member_month') }} as mm
 inner join {{ var('predictions_person_year_prospective') }} as pred
