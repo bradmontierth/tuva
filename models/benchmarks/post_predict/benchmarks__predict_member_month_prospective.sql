@@ -16,15 +16,25 @@
 {%- endfor -%}
 
 {# Build dynamic expected pairs directly from the predictions relation columns #}
-{%- set pred_str = var('predictions_person_year_prospective') -%}
-{%- set clean = pred_str | replace('`','') | replace('[','') | replace(']','') | replace('"','') -%}
-{%- set parts = clean.split('.') -%}
-{%- if parts | length == 3 -%}
-  {%- set pred_rel = adapter.get_relation(database=parts[0], schema=parts[1], identifier=parts[2]) -%}
-{%- elif parts | length == 2 -%}
-  {%- set pred_rel = adapter.get_relation(database=target.database, schema=parts[0], identifier=parts[1]) -%}
+{%- set pred_var = var('predictions_person_year_prospective', none) -%}
+{%- if pred_var is not none -%}
+  {%- set clean = pred_var | replace('`','') | replace('[','') | replace(']','') | replace('"','') -%}
+  {%- set parts = clean.split('.') -%}
+  {%- if parts | length == 3 -%}
+    {%- set pred_rel = adapter.get_relation(database=parts[0], schema=parts[1], identifier=parts[2]) -%}
+  {%- elif parts | length == 2 -%}
+    {%- set pred_rel = adapter.get_relation(database=target.database, schema=parts[0], identifier=parts[1]) -%}
+  {%- elif parts | length == 1 -%}
+    {%- set pred_rel = adapter.get_relation(database=target.database, schema=target.schema, identifier=parts[0]) -%}
+  {%- else -%}
+    {%- set pred_rel = none -%}
+  {%- endif -%}
 {%- else -%}
   {%- set pred_rel = none -%}
+{%- endif -%}
+
+{%- if pred_rel is none -%}
+  {%- set pred_rel = ref('benchmarks__predict_person_year_prospective') -%}
 {%- endif -%}
 
 {%- set pred_cols = adapter.get_columns_in_relation(pred_rel) if pred_rel else [] -%}
@@ -70,5 +80,5 @@ select
 {% endfor %}
 
 from {{ ref('benchmarks__predict_member_month') }} as mm
-inner join {{ var('predictions_person_year_prospective') }} as pred
+inner join {{ pred_rel }} as pred
   on pred.benchmark_key = mm.benchmark_key

@@ -42,6 +42,31 @@ models:
             combination_of_columns:
               - benchmark_key
 
+  - name: benchmarks__predict_person_year_prospective
+    description: |
+      person-year prospective predictions generated in-database with a dbt Python model
+    config:
+      enabled: "{{ var('benchmarks_train', false) | as_bool }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_benchmarks
+        {%- else -%}benchmarks{%- endif -%}
+      alias: predict_person_year_prospective
+      materialized: table
+      model_stage: "{{ var('benchmarks_model_stage', '@MEDICARE_LDS_FIVE_PERCENT.BENCHMARKS.MODEL_STAGE') }}"
+      bundle_file_name: "{{ var('benchmarks_model_bundle_file_name', '2023_prospective_models_bundle.pkl') }}"
+      scoring_year: "{{ var('benchmarks_prediction_year', 2023) }}"
+      row_limit: "{{ var('benchmarks_prediction_row_limit', none) }}"
+      tags:
+        - benchmarks_analysis
+        - benchmarks
+        - prospective
+        - python
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - benchmark_key
+
   - name: benchmarks__pivot_condition
     description: |
       flat table for training ml models on
