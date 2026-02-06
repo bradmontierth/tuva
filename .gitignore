@@ -32,3 +32,6 @@ __pycache__/
 venv/
 
 SQLFLUFF_LINTER_OUTPUT.TXT
+
+# Local ML model artifacts
+medicare-cost-encounter-model-prospective-copied/*.pkl
