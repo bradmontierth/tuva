@@ -49,6 +49,17 @@ select
 
 -- if person not in any condition table, create cold_start indicator
 , case when pc.person_id is null and pcms.person_id is null and phcc.person_id is null then 1 else 0 end as cold_start
+-- flag if any prior-year paid claims exist, even without mapped condition/HCC lag flags
+, case
+    when exists (
+      select 1
+      from {{ ref('benchmarks__person_year') }} as py_prev
+      where py_prev.person_id = py.person_id
+        and py_prev.data_source = py.data_source
+        and py_prev.year_nbr = (py.year_nbr - 1)
+        and coalesce(py_prev.paid_amount, 0) > 0
+    ) then 1 else 0
+  end as has_any_prior_paid
 
 {# --- prediction-year PMPM/PMPC --- #}
 , case when coalesce(py.member_month_count, 0) = 0
