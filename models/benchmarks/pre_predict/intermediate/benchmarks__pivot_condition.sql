@@ -5,14 +5,7 @@
 }}
 
 /* returns person year grain. Did the patient have the condition coded in each year? Not if they ever had the condition */
-with enrolled_member_months as (
-    select distinct
-        person_id
-        , cast(year_month as {{ dbt.type_int() }}) as year_month
-    from {{ ref('benchmarks__stg_core__member_months') }}
-)
-
-, cte as (
+with cte as (
     select distinct
         a.person_id
         , cal.year as year_nbr
@@ -28,9 +21,6 @@ with enrolled_member_months as (
         on a.normalized_code = c.code
     inner join {{ ref('benchmarks__stg_reference_data__calendar') }} as cal
         on a.recorded_date = cal.full_date
-    inner join enrolled_member_months as mm
-        on a.person_id = mm.person_id
-        and cast(cal.year_month_int as {{ dbt.type_int() }}) = mm.year_month
 )
 
 
