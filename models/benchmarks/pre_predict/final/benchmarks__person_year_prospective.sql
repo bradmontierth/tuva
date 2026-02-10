@@ -53,14 +53,14 @@ select
 {# --- prediction-year PMPM/PMPC --- #}
 , case when coalesce(py.member_month_count, 0) = 0
        then 0
-       else coalesce(py.paid_amount, 0) / py.member_month_count
+       else 1.0 * coalesce(py.paid_amount, 0) / py.member_month_count
   end as prediction_year_pmpm_paid_amount
 
 {% for col in paid_cols %}
   {% if col != 'paid_amount' %}
 , case when coalesce(py.member_month_count, 0) = 0
        then 0
-       else coalesce(py.{{ col }}, 0) / py.member_month_count
+       else 1.0 * coalesce(py.{{ col }}, 0) / py.member_month_count
   end as prediction_year_pmpm_{{ col }}
   {% endif %}
 {% endfor %}
@@ -69,7 +69,7 @@ select
   {% if col != 'member_month_count' %}
 , case when coalesce(py.member_month_count, 0) = 0
        then 0
-       else coalesce(py.{{ col }}, 0) / py.member_month_count
+       else 1.0 * coalesce(py.{{ col }}, 0) / py.member_month_count
   end as prediction_year_pmpc_{{ col }}
   {% endif %}
 {% endfor %}
