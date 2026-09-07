@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled', var('claims_enabled', var('tuva_marts_enabled', False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -9,9 +9,10 @@ select
   , dat.encounter_end_date
   , med.claim_id
   , med.claim_line_number
+  , med.data_source
   , row_number() over (
-        partition by med.claim_id, med.claim_line_number
-        order by dat.old_encounter_id
+        partition by med.claim_id, med.claim_line_number, med.data_source
+        order by dat.encounter_start_date, dat.old_encounter_id
     ) as claim_attribution_number
 from {{ ref('encounters__stg_medical_claim') }} as med
 inner join {{ ref('asc__start_end_dates') }} as dat

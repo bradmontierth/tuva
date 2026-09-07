@@ -1,10 +1,10 @@
 {{ config(
-     enabled = var('claims_enabled',var('clinical_enabled',var('tuva_marts_enabled',False)))
- | as_bool
+     enabled = (the_tuva_project.tuva_boolean_var('claims_enabled', false))
+            or (the_tuva_project.tuva_boolean_var('clinical_enabled', false))
    )
 }}
 
-{% if var('clinical_enabled', var('tuva_marts_enabled',False)) == true and var('claims_enabled', var('tuva_marts_enabled',False)) == true -%}
+{% if the_tuva_project.tuva_boolean_var('clinical_enabled', false) == true and the_tuva_project.tuva_boolean_var('claims_enabled', false) == true -%}
 
 select distinct
       cast(person_id as {{ dbt.type_string() }}) as person_id
@@ -12,9 +12,9 @@ select distinct
     , cast(member_id as {{ dbt.type_string() }}) as member_id
     , cast(payer as {{ dbt.type_string() }}) as payer
     , cast({{ quote_column('plan') }} as {{ dbt.type_string() }}) as {{ quote_column('plan') }}
-    , cast(data_source as {{ dbt.type_string() }}) as data_source
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
-from {{ ref('normalized_input__eligibility') }}
+    , cast(data_source as {{ dbt.type_string() }}) as data_source
+from {{ ref('normalized__eligibility') }}
 union all
 select distinct
       cast(person_id as {{ dbt.type_string() }}) as person_id
@@ -22,11 +22,11 @@ select distinct
     , cast(null as {{ dbt.type_string() }}) as member_id
     , cast(null as {{ dbt.type_string() }}) as payer
     , cast(null as {{ dbt.type_string() }}) as {{ quote_column('plan') }}
-    , cast(data_source as {{ dbt.type_string() }}) as data_source
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
-from {{ ref('input_layer__patient') }}
+    , cast(data_source as {{ dbt.type_string() }}) as data_source
+from {{ ref('normalized__patient') }}
 
-{% elif var('clinical_enabled', var('tuva_marts_enabled',False)) == true -%}
+{% elif the_tuva_project.tuva_boolean_var('clinical_enabled', false) == true -%}
 
 select distinct
       cast(person_id as {{ dbt.type_string() }}) as person_id
@@ -34,11 +34,11 @@ select distinct
     , cast(null as {{ dbt.type_string() }}) as member_id
     , cast(null as {{ dbt.type_string() }}) as payer
     , cast(null as {{ dbt.type_string() }}) as {{ quote_column('plan') }}
-    , cast(data_source as {{ dbt.type_string() }}) as data_source
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
-from {{ ref('input_layer__patient') }}
+    , cast(data_source as {{ dbt.type_string() }}) as data_source
+from {{ ref('normalized__patient') }}
 
-{% elif var('claims_enabled', var('tuva_marts_enabled',False)) == true -%}
+{% elif the_tuva_project.tuva_boolean_var('claims_enabled', false) == true -%}
 
 select distinct
       cast(person_id as {{ dbt.type_string() }}) as person_id
@@ -46,8 +46,8 @@ select distinct
     , cast(member_id as {{ dbt.type_string() }}) as member_id
     , cast(payer as {{ dbt.type_string() }}) as payer
     , cast({{ quote_column('plan') }} as {{ dbt.type_string() }}) as {{ quote_column('plan') }}
-    , cast(data_source as {{ dbt.type_string() }}) as data_source
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
-from {{ ref('normalized_input__eligibility') }}
+    , cast(data_source as {{ dbt.type_string() }}) as data_source
+from {{ ref('normalized__eligibility') }}
 
 {%- endif %}

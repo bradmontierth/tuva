@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled',var('claims_enabled',var('tuva_marts_enabled',False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -12,9 +12,11 @@ with detail_values as (
       , cli.encounter_type
     , cli.encounter_group
     from {{ ref('encounters__stg_medical_claim') }} as stg
-    inner join {{ ref('encounters__combined_claim_line_crosswalk') }} as cli on stg.claim_id = cli.claim_id  --replace this ref with the deduped version when complete
+    inner join {{ ref('encounters__combined_claim_line_crosswalk') }} as cli on stg.claim_id = cli.claim_id
     and
     stg.claim_line_number = cli.claim_line_number
+    and
+    stg.data_source = cli.data_source
     and
     cli.encounter_type = 'inpatient long term acute care'
     and
@@ -43,7 +45,7 @@ where claim_type = 'institutional'
         d.encounter_id
         , f.diagnosis_code_1
         , f.diagnosis_code_type
-        , f.facility_id as facility_id
+        , f.facility_npi as facility_npi
         , f.drg_code_type
         , f.drg_code as drg_code
         , f.admit_source_code as admit_source_code
@@ -65,7 +67,7 @@ where claim_type = 'institutional'
     select
         patient_data_source_id
         , birth_date
-        , gender
+        , sex
         , race
     from {{ ref('encounters__stg_eligibility') }}
     where patient_row_num = 1
@@ -105,6 +107,8 @@ group by encounter_id
     left outer join {{ ref('service_category__service_category_grouper') }} as scr on d.claim_id = scr.claim_id
     and
     scr.claim_line_number = d.claim_line_number
+    and
+    scr.data_source = d.data_source
     group by d.encounter_id
 )
 
@@ -116,12 +120,12 @@ select
 , tot.encounter_type
 , tot.encounter_group
 , {{ dbt.datediff("birth_date","encounter_end_date","day") }} / 365 as admit_age
-, e.gender
+, e.sex
 , e.race
 , c.diagnosis_code_type as primary_diagnosis_code_type
 , c.diagnosis_code_1 as primary_diagnosis_code
 , coalesce(icd10cm.long_description, icd9cm.long_description) as primary_diagnosis_description
-, c.facility_id as facility_id
+, c.facility_npi as facility_npi
 , b.provider_organization_name as facility_name
 , b.primary_specialty_description as facility_type
 , sc.lab_flag
@@ -146,7 +150,11 @@ select
 , tot.claim_count
 , tot.inst_claim_count
 , tot.prof_claim_count
-, {{ dbt.datediff("a.encounter_start_date","a.encounter_end_date","day") }} as length_of_stay
+, case
+    when {{ dbt.datediff("a.encounter_start_date","a.encounter_end_date","day") }} = 0
+    then 1
+    else {{ dbt.datediff("a.encounter_start_date","a.encounter_end_date","day") }}
+  end as length_of_stay
 , case
     when c.discharge_disposition_code = '20' then 1
     else 0
@@ -161,8 +169,8 @@ left outer join institutional_claim_details as c
   on x.encounter_id = c.encounter_id
 left outer join patient as e
   on c.patient_data_source_id = e.patient_data_source_id
-left outer join {{ ref('terminology__provider') }} as b
-  on c.facility_id = b.npi
+left outer join {{ ref('provider_data__provider') }} as b
+  on c.facility_npi = b.npi
 left outer join {{ ref('terminology__discharge_disposition') }} as g
   on c.discharge_disposition_code = g.discharge_disposition_code
 left outer join {{ ref('terminology__admit_source') }} as h

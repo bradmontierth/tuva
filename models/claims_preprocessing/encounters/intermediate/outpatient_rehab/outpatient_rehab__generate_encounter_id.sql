@@ -1,19 +1,22 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled',var('claims_enabled',var('tuva_marts_enabled',False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
 with anchor as (
 select distinct m.patient_data_source_id
+ , m.data_source
  , m.start_date
  , m.claim_id
 from {{ ref('encounters__stg_medical_claim') }} as m
 inner join {{ ref('outpatient_rehab__anchor_events') }} as u on m.claim_id = u.claim_id
+and
+m.data_source = u.data_source
 )
 
 select patient_data_source_id
+, data_source
 , start_date
 , claim_id
-, dense_rank() over (
-order by patient_data_source_id, start_date) as old_encounter_id
+, {{ the_tuva_project.encounter_id_hash(["'outpatient rehabilitation'", 'patient_data_source_id', 'start_date']) }} as old_encounter_id
 from anchor

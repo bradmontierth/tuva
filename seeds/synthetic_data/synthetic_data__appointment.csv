@@ -1,0 +1,1 @@
+"appointment_id","person_id","patient_id","encounter_id","start_datetime","end_datetime","duration","location_id","practitioner_id","type_code","type_description","status_code","status_description","reason","cancellation_reason","data_source"

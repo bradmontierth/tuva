@@ -8,7 +8,7 @@
 #}
 
 {% macro year_month(date_column) -%}
-    {{ return(adapter.dispatch('year_month')(date_column)) }}
+    {{ return(adapter.dispatch('year_month', 'the_tuva_project')(date_column)) }}
 {%- endmacro %}
 
 {% macro default__year_month(date_column) -%}
@@ -45,4 +45,10 @@
 
 {% macro fabric__year_month(date_column) -%}
     FORMAT(cast({{ date_column }} as date), 'yyyyMM')
+{%- endmacro %}
+
+{# SQL Server is T-SQL. dbt-sqlserver registers no adapter-type parent,
+   so fabric__ macros are not reached by dispatch and must be aliased. #}
+{% macro sqlserver__year_month(date_column) -%}
+    {{ the_tuva_project.fabric__year_month(date_column) }}
 {%- endmacro %}

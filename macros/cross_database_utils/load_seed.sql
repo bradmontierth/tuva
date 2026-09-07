@@ -1,7 +1,9 @@
 {#
     This macro includes options for compression, headers, and null markers.
-    Default options are set to FALSE. When set to TRUE, the appropriate
-    adapter-specific syntax will be used.
+    Package-aligned assets are canonicalized to bare empty null fields before
+    publication and call this macro with null_marker=true. The null_marker
+    argument remains in the public signature for compatibility; native CSV
+    null behavior means false does not preserve empty strings on every adapter.
 
     Argument examples:
     compression=false
@@ -17,9 +19,41 @@
 {% endmacro %}
 
 
+{% macro reset_seed_relation() %}
+{{ return(adapter.dispatch('reset_seed_relation', 'the_tuva_project')()) }}
+{% endmacro %}
+
+
+{% macro default__reset_seed_relation() %}
+{% set sql %}
+truncate table {{ this }}
+{% endset %}
+
+{% call statement('seed_reset', fetch_result=false) %}
+{{ sql }}
+{% endcall %}
+{% endmacro %}
+
+
+{% macro duckdb__reset_seed_relation() %}
+{% endmacro %}
+
+
+{% macro athena__reset_seed_relation() %}
+{% endmacro %}
+
+
 {% macro duckdb__load_seed(uri,pattern,compression,headers,null_marker) %}
 {%- set columns = adapter.get_columns_in_relation(this) -%}
 {%- set collist = [] -%}
+{%- set local_storage_root = var('tuva_seed_duckdb_storage_root', '') | string | trim -%}
+
+{% if local_storage_root == '' %}
+  {%- set seed_path = 's3://' ~ uri ~ '/' ~ pattern ~ '*' -%}
+{% else %}
+  {%- set root_separator = '' if local_storage_root.endswith('/') else '/' -%}
+  {%- set seed_path = local_storage_root ~ root_separator ~ uri ~ '/' ~ pattern ~ '*' -%}
+{% endif %}
 
 {% for col in columns %}
   {% do collist.append("'" ~col.name~"'" ~ ": " ~ "'"~col.dtype~"'") %}
@@ -33,8 +67,8 @@
   select
       *
     from
-        read_csv('s3://{{ uri }}/{{ pattern }}*',
-        {% if null_marker == true %} nullstr = '\N' {% else %} nullstr = '' {% endif %},
+        read_csv('{{ seed_path | replace("'", "''") }}',
+        nullstr = '',
          quote = '"', escape = '"',
          header={{headers}},
          columns= { {{ cols }} } )
@@ -57,7 +91,7 @@
 {# debugging { log(sql, True)} #}
 {% set count_result = load_result('count') %}
 {% set row_count = count_result.table.columns[0].values()[0] if count_result.table else 0 %}
-{{ log("Loaded data from external s3 resource\n  loaded to: " ~ this ~ "\n  from: s3://" ~ uri ~ "/" ~ pattern ~ "*\n  rows: " ~ row_count,True) }}
+{{ log("Loaded data from external resource\n  loaded to: " ~ this ~ "\n  from: " ~ seed_path ~ "\n  rows: " ~ row_count,True) }}
 {# debugging { log(results, True) } #}
 {% endif %}
 
@@ -65,25 +99,19 @@
 
 
 {% macro redshift__load_seed(uri,pattern,compression,headers,null_marker) %}
+{% do the_tuva_project.reset_seed_relation() %}
 {% set sql %}
-
-{% set access_key_part_1 = 'AKIA2EPVN' %}
-{% set access_key_part_2 = 'TV4GFRR5377' %}
-
-{% set secret_key_part_1 = 'refUFvpX0ekY6CKEBEM' %}
-{% set secret_key_part_2 = '7BBfwDm/aUwSmmqX/Updi' %}
-
-{% set full_access_key = access_key_part_1 ~ access_key_part_2 %}
-{% set full_secret_key = secret_key_part_1 ~ secret_key_part_2 %}
 
 copy  {{ this }}
   from 's3://{{ uri }}/{{ pattern }}'
-    access_key_id '{{ full_access_key }}'
-    secret_access_key '{{ full_secret_key }}'
+    iam_role default
   csv
   {% if compression == true %} gzip {% else %} {% endif %}
   {% if headers == true %} ignoreheader 1 {% else %} {% endif %}
   emptyasnull
+  /* Redshift's default NULL AS value is \\N. Override it with the
+     publisher-reserved sentinel so quoted literal \\N remains text. */
+  null as '__TUVA_RESERVED_NULL_MARKER_1_0__'
   region 'us-east-1'
 
 {% endset %}
@@ -98,7 +126,6 @@ copy  {{ this }}
 {{ log("Loaded data from external s3 resource\n  loaded to: " ~ this ~ "\n  from: s3://" ~ uri ,True) }}
 {# debugging { log(results, True) } #}
 {% endif %}
-
 {% endmacro %}
 
 
@@ -106,10 +133,13 @@ copy  {{ this }}
   {% if execute %}
         {%- set columns = adapter.get_columns_in_relation(this) -%}
         {%- set column_definitions = [] -%}
-        {%- set null_char = 'N' if null_marker else '' -%}
+        {%- set null_char = '' -%}
 
         {% for col in columns %}
-            {% do column_definitions.append(col.name ~ " string" ) %}
+            {# Positional names on the staging table. A Glue table carrying a
+               reserved word such as `procedure` cannot be read by CTAS at all,
+               so the real names are reapplied in the select below. #}
+            {% do column_definitions.append("c" ~ loop.index0 ~ " string" ) %}
         {% endfor %}
 
         {%- set col_ddl = column_definitions|join(',') -%}
@@ -127,6 +157,13 @@ copy  {{ this }}
         {% set create_tmp_table %}
             CREATE EXTERNAL TABLE `{{ tmp_table }}` ( {{ col_ddl }} )
             ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+            WITH SERDEPROPERTIES (
+                'separatorChar' = ',',
+                'quoteChar' = '"',
+                /* Disable OpenCSV's default backslash escape. Otherwise a
+                   quoted literal \\N loses its backslash before nullif. */
+                'escapeChar' = '\0'
+            )
             STORED AS TEXTFILE
             LOCATION '{{ bucket }}'
             TBLPROPERTIES ('skip.header.line.count'='{{ header_line_count }}', 'compressionType'='GZIP');
@@ -139,7 +176,7 @@ copy  {{ this }}
             CREATE TABLE {{ table_name }} AS
                 SELECT
                 {% for col in columns %}
-                    cast(nullif({{ col.name }},'{{ null_char }}') as {{ dml_data_type(col.dtype) }}) as {{ col.name }} {%-if not loop.last -%},{%- endif %}
+                    cast(nullif(c{{ loop.index0 }},'{{ null_char }}') as {{ dml_data_type(col.dtype) }}) as "{{ col.name }}" {%-if not loop.last -%},{%- endif %}
                 {% endfor %}
                 FROM {{ tmp_table }}
                 WHERE "$path" like '{{ full_path }}%';
@@ -155,7 +192,53 @@ copy  {{ this }}
 {% endmacro %}
 
 
+{% macro snowflake_seed_rows_loaded(column_names, data, uri, pattern) %}
+{% set normalized_column_names = [] %}
+{% for column_name in column_names %}
+  {% do normalized_column_names.append(column_name | string | lower) %}
+{% endfor %}
+
+{% if data | length == 0 %}
+  {% do exceptions.raise_compiler_error(
+      "Snowflake seed load returned no result for s3://" ~ uri ~ "/" ~ pattern ~ "."
+  ) %}
+{% endif %}
+
+{% if 'rows_loaded' not in normalized_column_names %}
+  {% set copy_status = data[0][0] if data[0] | length > 0 else 'COPY returned no status' %}
+  {% do exceptions.raise_compiler_error(
+      "Snowflake seed load processed no files from s3://"
+      ~ uri ~ "/" ~ pattern ~ ". Result: " ~ copy_status
+  ) %}
+{% endif %}
+
+{% set rows_loaded_index = normalized_column_names.index('rows_loaded') %}
+{% set loaded = namespace(rows=0) %}
+{% for row in data %}
+  {% set loaded.rows = loaded.rows + (row[rows_loaded_index] | int) %}
+{% endfor %}
+
+{% if loaded.rows == 0 %}
+  {% set statuses = [] %}
+  {% if 'status' in normalized_column_names %}
+    {% set status_index = normalized_column_names.index('status') %}
+    {% for row in data %}
+      {% do statuses.append(row[status_index] | string) %}
+    {% endfor %}
+  {% endif %}
+  {% set copy_status = statuses | join(', ') if statuses | length > 0 else 'COPY loaded zero rows' %}
+  {% do exceptions.raise_compiler_error(
+      "Snowflake seed load loaded zero rows from s3://"
+      ~ uri ~ "/" ~ pattern ~ ". Result: " ~ copy_status
+  ) %}
+{% endif %}
+
+{{ return(loaded.rows) }}
+{% endmacro %}
+
+
 {% macro snowflake__load_seed(uri,pattern,compression,headers,null_marker) %}
+{% do the_tuva_project.reset_seed_relation() %}
 {% set sql %}
 copy into {{ this }}
     from s3://{{ uri }}
@@ -166,13 +249,11 @@ copy into {{ this }}
       {% endif %}
       empty_field_as_null = true
       field_optionally_enclosed_by = '"'
-      /* Crucial: also treat quoted empties "" as NULL */
-      {% if null_marker == true %}
-      null_if = ('', '""', 'NULL', '\\N')
-      {% else %}
-      /* At minimum, handle both empty and quoted-empty */
-      null_if = ('', '""')
-      {% endif %}
+      escape_unenclosed_field = NONE
+      /* Bare empty fields are handled by empty_field_as_null. This reserved
+         value neutralizes Snowflake's default \\N marker without colliding
+         with a publisher-approved data value. */
+      null_if = ('__TUVA_RESERVED_NULL_MARKER_1_0__')
 )
 pattern = '.*\/{{pattern}}.*';
 {% endset %}
@@ -183,7 +264,13 @@ pattern = '.*\/{{pattern}}.*';
 {% if execute %}
 {# debugging { log(sql, True)} #}
 {% set results = load_result('snowsql') %}
-{{ log("Loaded data from external s3 resource\n  loaded to: " ~ this ~ "\n  from: s3://" ~ uri ~ "/" ~ pattern ~ "*\n  rows: " ~ results['data']|sum(attribute=2),True) }}
+{% set rows_loaded = the_tuva_project.snowflake_seed_rows_loaded(
+    results['table'].column_names,
+    results['data'],
+    uri,
+    pattern
+) %}
+{{ log("Loaded data from external s3 resource\n  loaded to: " ~ this ~ "\n  from: s3://" ~ uri ~ "/" ~ pattern ~ "*\n  rows: " ~ rows_loaded,True) }}
 {# debugging { log(results, True)} #}
 {% endif %}
 
@@ -193,6 +280,7 @@ pattern = '.*\/{{pattern}}.*';
 
 
 {% macro bigquery__load_seed(uri,pattern,compression,headers,null_marker) %}
+{% do the_tuva_project.reset_seed_relation() %}
 {%- set columns = adapter.get_columns_in_relation(this) -%}
 {%- set collist = [] -%}
 
@@ -200,15 +288,13 @@ pattern = '.*\/{{pattern}}.*';
   {% do collist.append(col.name ~ " " ~ col.dtype) %}
 {% endfor %}
 
-{%- set cols = collist|join(',') -%}
-{# { log( cols,true) } #}
 {% set sql %}
-load data into {{ this }} ( {{collist|join(',')}} )
+load data into {{ this }} ( {{ collist|join(',') }} )
 from files (format = 'csv',
     uris = ['gs://{{ uri }}/{{ pattern }}*'],
     {% if compression == true %} compression = 'GZIP', {% else %} {% endif %}
     {% if headers == true %} skip_leading_rows = 1, {% else %} {% endif %}
-    {% if null_marker == true %} null_marker = '\\N', {% else %} {% endif %}
+    {% if null_marker == true %} null_markers = [''], {% else %} {% endif %}
     quote = '"',
     allow_quoted_newlines = True
     )
@@ -231,6 +317,7 @@ from files (format = 'csv',
 
 {% macro databricks__load_seed(uri,pattern,compression,headers,null_marker) %}
 {% if execute %}
+{% do the_tuva_project.reset_seed_relation() %}
 
 {%- set s3_path = 's3://' ~ uri ~ '/' -%}
 {%- set columns = adapter.get_columns_in_relation(this) -%}
@@ -263,7 +350,7 @@ FILEFORMAT = CSV
 PATTERN = '{{ pattern }}*'
 FORMAT_OPTIONS (
   {% if headers == true %} 'skipRows' = '1', {% else %} 'skipRows' = '0', {% endif %}
-  {% if null_marker == true %} 'nullValue' = '\\N', {% else %} {% endif %}
+  {% if null_marker == true %} 'nullValue' = '', {% else %} {% endif %}
   'enforceSchema' = 'false',
   'inferSchema' = 'false',
   'sep' = ',',
@@ -300,66 +387,18 @@ COPY_OPTIONS (
 {% endif %}
 {% endmacro %}
 
-
-
--- postgres - note this requires some pre-work on your part -  you need to clone
--- the data from the tuva public resource bucket to re-assemble it into a single
--- file per seed with quoted null's unquoted - also ensure you've set the
--- Content-Type system header on each to be gzip
--- (https://stackoverflow.com/a/74439053) otherwise the extension won't know to
--- decompress it.
---
--- TODO: revisit removing column list, I think it'll work fine with '' for cols
-{% macro postgres__load_seed(uri,pattern,compression,headers,null_marker) %}
-{%- set columns = adapter.get_columns_in_relation(this) -%}
-{%- set collist = [] -%}
-{%- for col in columns -%}
-  {%- do collist.append(col.name) -%}
-{%- endfor -%}
-{%- set cols = collist|join(",") -%}
-
-{%- set s3_bucket = var("tuva_seeds_s3_bucket", uri.split("/")[0]) -%}
-{%- set s3_key = uri.split("/")[1:]|join("/") + "/" + pattern + "_0.csv.gz" -%}
-{%- if var("tuva_seeds_s3_key_prefix", "") != "" -%}
-{%- set s3_key = var("tuva_seeds_s3_key_prefix") + "/" + s3_key -%}
-{%- endif -%}
-{%- set s3_region = "us-east-1" -%}
-{%- set options = ["(", "format csv", ", encoding ''utf8''"] -%}
-{%- do options.append(", null ''\\N''") if null_marker == true -%}
-{%- do options.append(")") -%}
-{%- set options_s = options | join("") -%}
-
-{% set sql %}
-SELECT aws_s3.table_import_from_s3(
-   '{{ this }}',
-   '{{ cols }}',
-   '{{ options_s }}',
-   aws_commons.create_s3_uri('{{s3_bucket}}', '{{s3_key}}', '{{s3_region}}')
-)
-{% endset %}
-
-{% call statement('postgressql',fetch_result=true) %}
-{{ sql }}
-{% endcall %}
-
-{% if execute %}
-{# debugging { log(sql, True)} #}
-{% set results = load_result('postgressql') %}
-{{ log("Loaded data from external s3 resource\n  loaded to: " ~ this ~ "\n  from: s3://" ~ s3_bucket ~ "/" ~ s3_key ,True) }}
-{# debugging { log(results, True) } #}
-{% endif %}
-
-{% endmacro %}
-
-
 {% macro fabric__load_seed(uri, pattern, compression, headers, null_marker) %}
+{% do the_tuva_project.reset_seed_relation() %}
+{% set fabric_storage_root = var('tuva_seed_fabric_storage_root', 'https://tuvapublicresources.blob.core.windows.net') | trim('/') %}
 {% set sql %}
 COPY INTO {{ this }}
-FROM 'https://tuvapublicresources.blob.core.windows.net/{{ uri }}/{{ pattern }}'
+FROM '{{ fabric_storage_root }}/{{ uri }}/{{ pattern }}'
 WITH (
-    FILE_TYPE = 'CSV',
-    FIELDTERMINATOR = ',',
-    ROWTERMINATOR = '\n'
+    FILE_TYPE = 'CSV'
+    , ENCODING = 'UTF8'
+    , FIELDQUOTE = '"'
+    , ROWTERMINATOR = '0x0A'
+    {% if compression == true %}, COMPRESSION = 'GZIP' {% else %} {% endif %}
     {% if headers == true %}, FIRSTROW = 2 {% else %} {% endif %}
 );
 {% endset %}
@@ -375,6 +414,185 @@ WITH (
 {# debugging { log(results, True)} #}
 {% endif %}
 
+{% endmacro %}
+
+
+{#
+    SQL Server has no COPY INTO and no wildcard bulk loader, and BULK INSERT
+    cannot decompress. It does have a native GZIP builtin, so the published
+    .csv.gz is read as a single blob, decompressed in-engine, split into lines
+    and parsed field-wise.
+
+    The parse is RFC 4180 over the assets exactly as published, with their
+    existing minimal quoting: only fields that need quotes carry them. Splitting
+    a line on every comma over-splits any quoted field containing one, so tokens
+    are re-joined wherever the running count of double quotes before them is
+    odd, which is precisely when the preceding comma fell inside a quoted field.
+
+    Parsing what is already published matters more than a simpler parser would.
+    Requiring fully-quoted CSV instead would turn every bare empty field into a
+    quoted empty string, and several loaders treat only the bare form as NULL,
+    so republishing to suit this adapter risks changing NULL semantics for the
+    warehouses that already work.
+
+    tuva_seed_sqlserver_storage_root accepts either an https blob endpoint
+    (the default public mirror) or a local filesystem root for testing.
+#}
+
+{% macro sqlserver__load_seed(uri, pattern, compression, headers, null_marker) %}
+{% if execute %}
+{% do the_tuva_project.reset_seed_relation() %}
+
+{%- set columns = adapter.get_columns_in_relation(this) -%}
+{%- if columns | length == 0 -%}
+  {% do exceptions.raise_compiler_error("SQL Server seed load found no columns on " ~ this ~ ".") %}
+{%- endif -%}
+
+{%- set storage_root = var('tuva_seed_sqlserver_storage_root', 'https://tuvapublicresources.blob.core.windows.net') | string | trim -%}
+{%- set storage_root = storage_root.rstrip('/') -%}
+{%- set is_remote = storage_root.startswith('http://') or storage_root.startswith('https://') -%}
+{%- set normalized_uri = uri | string | trim | trim('/') -%}
+
+{%- if is_remote -%}
+  {#- The first uri segment is the storage container; the rest is the blob path. -#}
+  {%- set uri_parts = normalized_uri.split('/') -%}
+  {%- set container = uri_parts[0] -%}
+  {%- set blob_path = uri_parts[1:] | join('/') -%}
+  {%- set data_source_name = 'tuva_seed_' ~ container | replace('-', '_') | replace('.', '_') -%}
+  {%- set object_path = blob_path ~ '/' ~ pattern -%}
+  {%- set source_args = "'" ~ object_path ~ "', data_source = '" ~ data_source_name ~ "', single_blob" -%}
+  {#
+      Seeds run concurrently, so two threads can both pass the existence check
+      before either creates the data source. Swallow the resulting duplicate
+      error and re-check, rather than letting a harmless race fail the load.
+  #}
+  {% set ensure_source %}
+    if not exists (select 1 from sys.external_data_sources where name = '{{ data_source_name }}')
+    begin
+      begin try
+        exec('create external data source [{{ data_source_name }}] with (type = BLOB_STORAGE, location = ''{{ storage_root }}/{{ container }}'')');
+      end try
+      begin catch
+        if not exists (select 1 from sys.external_data_sources where name = '{{ data_source_name }}')
+          throw;
+      end catch
+    end
+  {% endset %}
+  {% call statement('sqlserver_seed_source', fetch_result=false) %}{{ ensure_source }}{% endcall %}
+{%- else -%}
+  {%- set object_path = storage_root ~ '/' ~ normalized_uri ~ '/' ~ pattern -%}
+  {%- set source_args = "'" ~ object_path ~ "', single_blob" -%}
+{%- endif -%}
+
+{#- DECOMPRESS is SQL Server's GZIP builtin; skip it for uncompressed sources. -#}
+{%- if compression == true -%}
+  {%- set payload = "cast(decompress(src.BulkColumn) as varchar(max))" -%}
+{%- else -%}
+  {%- set payload = "cast(src.BulkColumn as varchar(max))" -%}
+{%- endif -%}
+
+{%- set insert_cols = [] -%}
+{%- set select_exprs = [] -%}
+{%- set pivot_exprs = [] -%}
+{%- for col in columns -%}
+  {%- do insert_cols.append(the_tuva_project.quote_column(col.name)) -%}
+  {%- do pivot_exprs.append("max(case when field_no = " ~ loop.index ~ " then val end) as c" ~ loop.index0) -%}
+  {#- cast(x as varchar) with no length silently truncates to 30 characters in
+      T-SQL, and get_columns_in_relation reports varchar(max) as a bare
+      "varchar". Always render an explicit length. -#}
+  {%- set dt = col.dtype | lower | trim -%}
+  {%- if 'char' in dt and '(' not in dt -%}
+    {%- set size = col.char_size -%}
+    {%- set target_type = dt ~ '(' ~ ('max' if (size is none or size <= 0) else size) ~ ')' -%}
+  {%- else -%}
+    {%- set target_type = col.dtype -%}
+  {%- endif -%}
+  {%- set raw = "nullif(parsed.c" ~ loop.index0 ~ ", '__TUVA_RESERVED_NULL_MARKER_1_0__')" -%}
+  {%- do select_exprs.append("cast(" ~ raw ~ " as " ~ target_type ~ ")") -%}
+{%- endfor -%}
+
+{% set sql %}
+insert into {{ this }} ({{ insert_cols | join(', ') }})
+select
+      {{ select_exprs | join('\n    , ') }}
+from (
+    select
+          line_no
+        , {{ pivot_exprs | join('\n        , ') }}
+    from (
+        /* Strip the surrounding quotes from a quoted field and undouble its
+           internal quotes. len() ignores trailing spaces, so measure with a
+           sentinel appended. An empty field is NULL, matching the bare-empty
+           null convention the assets are published with. */
+        select
+              line_no
+            , field_no
+            , nullif(
+                  case
+                      when (len(rf + '|') - 1) >= 2 and left(rf, 1) = '"' and right(rf, 1) = '"'
+                          then replace(substring(rf, 2, (len(rf + '|') - 1) - 2), '""', '"')
+                      else rf
+                  end
+              , '') as val
+        from (
+            select
+                  line_no
+                , field_no
+                , string_agg(cast(tok as varchar(max)), ',') within group (order by tok_no) as rf
+            from (
+                /* A comma only ends a field when an even number of quotes has
+                   been seen so far on the line; otherwise it is inside a
+                   quoted field and its tokens belong to the same field. */
+                select
+                      line_no
+                    , tok_no
+                    , tok
+                    , 1 + isnull(
+                          sum(case when cum % 2 = 0 then 1 else 0 end) over (
+                              partition by line_no order by tok_no
+                              rows between unbounded preceding and 1 preceding
+                          ), 0) as field_no
+                from (
+                    select
+                          line_no
+                        , tok_no
+                        , tok
+                        , sum(quote_count) over (
+                              partition by line_no order by tok_no
+                              rows between unbounded preceding and current row
+                          ) as cum
+                    from (
+                        select
+                              ln.ordinal as line_no
+                            , t.ordinal as tok_no
+                            , t.value as tok
+                            , (len(t.value + '|') - 1) - (len(replace(t.value, '"', '') + '|') - 1) as quote_count
+                        from openrowset(bulk {{ source_args }}) as src
+                        cross apply (select replace({{ payload }}, char(13), '') as text) as body
+                        cross apply string_split(body.text, char(10), 1) as ln
+                        cross apply string_split(ln.value, ',', 1) as t
+                        where ln.ordinal > {{ 1 if headers == true else 0 }}
+                          and len(ln.value + '|') > 1
+                    ) as tokens
+                ) as running
+            ) as fields
+            group by line_no, field_no
+        ) as grouped
+    ) as cleaned
+    group by line_no
+) as parsed
+{% endset %}
+
+{% call statement('sqlserver_seed', fetch_result=false) %}{{ sql }}{% endcall %}
+
+{% set count_sql %}select count(*) as row_count from {{ this }}{% endset %}
+{% call statement('sqlserver_seed_count', fetch_result=true) %}{{ count_sql }}{% endcall %}
+{% set count_result = load_result('sqlserver_seed_count') %}
+{% set row_count = count_result.table.columns[0].values()[0] if count_result.table else 0 %}
+{{ log("Loaded data from " ~ ("external blob storage" if is_remote else "local storage")
+       ~ "\n  loaded to: " ~ this ~ "\n  from: " ~ object_path ~ "\n  rows: " ~ row_count, True) }}
+
+{% endif %}
 {% endmacro %}
 
 

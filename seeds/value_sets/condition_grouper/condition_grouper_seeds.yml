@@ -1,0 +1,140 @@
+version: 2
+
+seeds:
+  - name: tuva_condition_grouper
+    description: |-
+      The Tuva Condition Grouper defines the condition hierarchy used to classify normalized diagnosis records in core.condition. Each row represents one mutually exclusive condition and its parent condition family.
+    config:
+      meta:
+        primary_key_columns:
+          - condition
+        primary_key_strategy: natural_single_column
+      post_hook: "{{ load_versioned_seed('value_sets','tuva_condition_grouper.csv.gz') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_value_sets{% else %}value_sets{%- endif -%}
+      alias: tuva_condition_grouper
+      tags:
+        - value_sets
+        - condition_grouper
+      column_types:
+        condition_family: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        condition_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        status: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
+        last_update_date: date
+        last_update_note: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
+    columns:
+      - name: condition_family
+        description: Analytic rollup family for the condition, such as Cardiovascular Disease, Cancer, or Mental Health Disorders.
+        tests:
+          - not_null
+      - name: condition_name
+        description: Mutually exclusive condition name assigned by the Tuva Condition Grouper.
+        tests:
+          - not_null
+          - unique
+      - name: status
+        description: Governance status of the condition row. Active rows are available for use in Tuva Condition Grouper mappings.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['active', 'inactive']
+      - name: description
+        description: Human-readable description of the condition and its placement in the condition family.
+        tests:
+          - not_null
+      - name: last_update_date
+        description: Date this condition row was last reviewed or updated.
+        tests:
+          - not_null
+      - name: last_update_note
+        description: Short note describing the reason for the most recent update to the condition row.
+        tests:
+          - not_null
+  - name: tuva_condition_grouper_code_map
+    description: |-
+      The Tuva Condition Grouper Code Map assigns supported diagnosis codes to exactly one Tuva condition. The code_system and code columns form the primary key and join to code_system and normalized_code in core.condition. Tuva currently supports ICD-10-CM, including valid retained nonbillable headings, and SNOMED CT diagnosis mappings; unsupported condition code systems remain null in core.condition.
+    config:
+      meta:
+        primary_key_columns:
+          - code_system
+          - code
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_seed('value_sets','tuva_condition_grouper_code_map.csv.gz') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_value_sets{% else %}value_sets{%- endif -%}
+      alias: tuva_condition_grouper_code_map
+      tags:
+        - value_sets
+        - condition_grouper
+      column_types:
+        condition_family: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        condition_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        code_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
+        code_system: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        status: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        last_update_date: date
+        last_update_note: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
+    columns:
+      - name: condition_family
+        description: Analytic condition family assigned to the diagnosis code.
+        tests:
+          - not_null
+      - name: condition_name
+        description: Mutually exclusive Tuva condition assigned to the diagnosis code.
+        tests:
+          - not_null
+      - name: code
+        description: Diagnosis code mapped to the Tuva condition. ICD-10-CM codes are stored without decimal formatting.
+        tests:
+          - not_null
+      - name: code_description
+        description: Human-readable description for the mapped diagnosis code from the source terminology.
+        tests:
+          - not_null
+      - name: code_system
+        description: Diagnosis code system for the mapped code. Current supported values are icd-10-cm and snomed-ct.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['icd-10-cm', 'snomed-ct']
+      - name: status
+        description: >-
+          Governance status of the code-to-condition assignment, independent
+          of the terminology code lifecycle. Active mappings populate Core for
+          both current and retained historical or deprecated codes. Inactive
+          mappings do not populate Core.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['active', 'inactive']
+      - name: last_update_date
+        description: Date this code mapping row was last reviewed or updated.
+        tests:
+          - not_null
+      - name: last_update_note
+        description: Short note describing the reason for the most recent update to the code mapping row.
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - code_system
+              - code

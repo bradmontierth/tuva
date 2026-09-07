@@ -1,0 +1,137 @@
+version: 2
+
+# Focused contract coverage for extension columns on a supported direct path:
+# input_layer__appointment -> normalized__appointment -> core__appointment.
+#
+# `_extension_columns_override` replaces compile-time relation introspection in
+# dbt unit tests. Production execution always discovers columns from the actual
+# relation. The macro's invalid-configuration and collision paths are validated
+# with expected-failure compile commands because an intentionally failing dbt
+# unit test cannot remain enabled in the normal suite.
+
+unit_tests:
+  - name: test_core_appointment_extension_default_prefix_without_stripping
+    description: >
+      Verifies the default x_ prefix is recognized case-insensitively and is
+      preserved when passthrough.strip uses its false default.
+    model: core__appointment
+    config:
+      enabled: "{{ var('clinical_enabled', false) | as_bool }}"
+    overrides:
+      vars:
+        clinical_enabled: true
+        passthrough:
+          prefix: 'x_'
+          strip: false
+        _extension_columns_override: ['X_TUVA_TEST_EXTENSION']
+    given:
+      - input: ref('normalized__appointment')
+        format: sql
+        rows: |
+          {% set timestamp_type = 'datetime2(0)' if target.type in ['fabric', 'sqlserver'] else 'timestamp' %}
+          select
+              'appointment_1' as appointment_id
+            , 'person_1' as person_id
+            , 'patient_1' as patient_id
+            , 'encounter_1' as encounter_id
+            , cast('2024-01-01 09:00:00' as {{ timestamp_type }}) as start_datetime
+            , cast('2024-01-01 09:30:00' as {{ timestamp_type }}) as end_datetime
+            , 30 as duration
+            , 'location_1' as location_id
+            , 'practitioner_1' as practitioner_id
+            , 'Office visit' as type
+            , 'Completed' as status
+            , 'Follow-up' as reason
+            , 'Not cancelled' as cancellation_reason
+            , 'default-prefix-value' as X_TUVA_TEST_EXTENSION
+            , cast('2024-01-01 10:00:00' as {{ timestamp_type }}) as ingest_datetime
+            , cast('2024-01-02 00:00:00' as {{ timestamp_type }}) as tuva_last_run
+            , 'clinical_source' as data_source
+    expect:
+      rows:
+        - appointment_id: appointment_1
+          X_TUVA_TEST_EXTENSION: default-prefix-value
+
+  - name: test_core_appointment_extension_custom_prefix_without_stripping
+    description: >
+      Verifies a valid custom prefix selects and preserves the complete source
+      column name when passthrough.strip is false.
+    model: core__appointment
+    config:
+      enabled: "{{ var('clinical_enabled', false) | as_bool }}"
+    overrides:
+      vars:
+        clinical_enabled: true
+        passthrough:
+          prefix: 'x_tuva_'
+          strip: false
+        _extension_columns_override: ['x_tuva_test_extension']
+    given:
+      - input: ref('normalized__appointment')
+        format: sql
+        rows: |
+          {% set timestamp_type = 'datetime2(0)' if target.type in ['fabric', 'sqlserver'] else 'timestamp' %}
+          select
+              'appointment_1' as appointment_id
+            , 'person_1' as person_id
+            , 'patient_1' as patient_id
+            , 'encounter_1' as encounter_id
+            , cast('2024-01-01 09:00:00' as {{ timestamp_type }}) as start_datetime
+            , cast('2024-01-01 09:30:00' as {{ timestamp_type }}) as end_datetime
+            , 30 as duration
+            , 'location_1' as location_id
+            , 'practitioner_1' as practitioner_id
+            , 'Office visit' as type
+            , 'Completed' as status
+            , 'Follow-up' as reason
+            , 'Not cancelled' as cancellation_reason
+            , 'custom-prefix-value' as x_tuva_test_extension
+            , cast('2024-01-01 10:00:00' as {{ timestamp_type }}) as ingest_datetime
+            , cast('2024-01-02 00:00:00' as {{ timestamp_type }}) as tuva_last_run
+            , 'clinical_source' as data_source
+    expect:
+      rows:
+        - appointment_id: appointment_1
+          x_tuva_test_extension: custom-prefix-value
+
+  - name: test_core_appointment_extension_custom_prefix_with_stripping
+    description: >
+      Verifies custom-prefix matching is case-insensitive and passthrough.strip
+      removes exactly that prefix from the quoted final output name.
+    model: core__appointment
+    config:
+      enabled: "{{ var('clinical_enabled', false) | as_bool }}"
+    overrides:
+      vars:
+        clinical_enabled: true
+        passthrough:
+          prefix: 'X_TUVA_'
+          strip: true
+        _extension_columns_override: ['x_tuva_test_extension']
+    given:
+      - input: ref('normalized__appointment')
+        format: sql
+        rows: |
+          {% set timestamp_type = 'datetime2(0)' if target.type in ['fabric', 'sqlserver'] else 'timestamp' %}
+          select
+              'appointment_1' as appointment_id
+            , 'person_1' as person_id
+            , 'patient_1' as patient_id
+            , 'encounter_1' as encounter_id
+            , cast('2024-01-01 09:00:00' as {{ timestamp_type }}) as start_datetime
+            , cast('2024-01-01 09:30:00' as {{ timestamp_type }}) as end_datetime
+            , 30 as duration
+            , 'location_1' as location_id
+            , 'practitioner_1' as practitioner_id
+            , 'Office visit' as type
+            , 'Completed' as status
+            , 'Follow-up' as reason
+            , 'Not cancelled' as cancellation_reason
+            , 'stripped-value' as x_tuva_test_extension
+            , cast('2024-01-01 10:00:00' as {{ timestamp_type }}) as ingest_datetime
+            , cast('2024-01-02 00:00:00' as {{ timestamp_type }}) as tuva_last_run
+            , 'clinical_source' as data_source
+    expect:
+      rows:
+        - appointment_id: appointment_1
+          test_extension: stripped-value

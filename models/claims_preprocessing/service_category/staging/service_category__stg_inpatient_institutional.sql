@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled', var('claims_enabled', var('tuva_marts_enabled', False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -66,11 +66,7 @@ inner join bill_type_requirement as d
   on a.claim_id = d.claim_id
   and a.data_source = d.data_source
 
-{% if target.type == 'fabric' %}
-union
-{% else %}
-union distinct
-{% endif %}
+{{ the_tuva_project.union_distinct() }}
 
 select distinct
     a.claim_id

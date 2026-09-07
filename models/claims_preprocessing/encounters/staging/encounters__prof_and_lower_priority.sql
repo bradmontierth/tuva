@@ -3,7 +3,7 @@ and should be part of a higher priority encounter where one exists. We are union
 here to access downstream from one place */
 
 {{ config(
-     enabled = var('claims_preprocessing_enabled',var('claims_enabled',var('tuva_marts_enabled',False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -14,11 +14,7 @@ select
 , data_source
 from {{ ref('encounters__stg_professional') }} as a
 
-{% if target.type == 'fabric' %}
-union
-{% else %}
-union distinct
-{% endif %}
+{{ the_tuva_project.union_distinct() }}
 
 select
   scg.claim_id

@@ -1,6 +1,5 @@
 {{ config(
-     enabled = var('clinical_enabled',var('tuva_marts_enabled',False))
- | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('clinical_enabled', false)
    )
 }}
 
@@ -12,14 +11,10 @@
     , source_code_type
     , source_code
     , source_description
-    , normalized_code_type
-    , normalized_code
-    , normalized_description
     , status
     , status_reason
     , occurrence_date
     , source_dose
-    , normalized_dose
     , lot_number
     , body_site
     , route
@@ -27,33 +22,18 @@
     , practitioner_id
 {%- endset -%}
 
-{# Uncomment the columns below to test extension columns passthrough feature #}
 {%- set tuva_extensions -%}
-    {# , person_id as x_temp_person_id #}
-    {# , source_code as x_temp_source_code #}
-    {# , source_code_type as zzz_temp_source_code_type #}
+    , 'immunization' as x_tuva_test_extension
+    , 'immunization' as ext_tuva_test_extension
 {%- endset -%}
 
 {%- set tuva_metadata -%}
-    , data_source
-    , file_name
     , ingest_datetime
+    , data_source
 {%- endset -%}
 
-{% if var('use_synthetic_data') == true -%}
-
 select
     {{ tuva_columns }}
     {{ tuva_extensions }}
     {{ tuva_metadata }}
-from {{ ref('immunization_seed') }}
-
-{%- else -%}
-
-select
-    {{ tuva_columns }}
-    {{ tuva_extensions }}
-    {{ tuva_metadata }}
-from {{ source('source_input', 'immunization') }}
-
-{%- endif %}
+from {{ ref('the_tuva_project', 'synthetic_data__immunization') }}

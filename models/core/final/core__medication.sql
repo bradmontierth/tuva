@@ -1,250 +1,165 @@
 {{ config(
-     enabled = var('clinical_enabled',var('tuva_marts_enabled',False))
- | as_bool
+     enabled = (the_tuva_project.tuva_boolean_var('claims_enabled', false))
+            or (the_tuva_project.tuva_boolean_var('clinical_enabled', false))
    )
 }}
 
-{%- set tuva_extension_columns -%}
-    {{ select_extension_columns(ref('input_layer__medication'), strip_prefix=false) }}
+{%- set tuva_extension_columns_from_all_medications -%}
+{% if the_tuva_project.tuva_boolean_var('clinical_enabled', false) %}
+    {{ select_extension_columns(ref('normalized__medication'), alias='meds', strip_prefix=false) }}
+{% endif %}
+{%- endset -%}
+
+{%- set tuva_extension_columns_from_source_mapping -%}
+{% if the_tuva_project.tuva_boolean_var('clinical_enabled', false) %}
+    {{ select_extension_columns(ref('normalized__medication'), alias='sm') }}
+{% endif %}
 {%- endset -%}
 
 {%- set tuva_metadata_columns -%}
-   , data_source
+   , ingest_datetime
    , tuva_last_run
+   , data_source
 {%- endset -%}
 
-with source_mapping as (
-{% if var('enable_normalize_engine',false) != true %}
+{%- set use_coderx_enterprise = the_tuva_project.tuva_boolean_var('use_coderx_enterprise', false) -%}
+
+with coderx_package_keys as (
     select
-     meds.medication_id
-   , meds.person_id
-   , meds.patient_id
-   , meds.encounter_id
-   , meds.dispensing_date
-   , meds.prescribing_date
-   , meds.source_code_type
-   , meds.source_code
-   , meds.source_description
-   , coalesce(
-       meds.ndc_code
-       , ndc.ndc
-       ) as ndc_code
-   , coalesce(
-       meds.ndc_description
-       , ndc.fda_description
-       , ndc.rxnorm_description
-       ) as ndc_description
-   , case
-        when meds.ndc_code is not null then 'manual'
-        when ndc.ndc is not null then 'automatic'
-        end as ndc_mapping_method
-   , coalesce(
-        meds.rxnorm_code
-        , rxatc.rxcui
-        ) as rxnorm_code
-   , coalesce(
-       meds.rxnorm_description
-       , rxatc.rxnorm_description
-       ) as rxnorm_description
-   , case
-        when meds.rxnorm_code is not null then 'manual'
-        when rxatc.rxcui is not null then 'automatic'
-        end as rxnorm_mapping_method
-   , coalesce(
-        meds.atc_code
-        , rxatc.atc_3_code
-        ) as atc_code
-   , coalesce(
-        meds.atc_description
-        , rxatc.atc_4_name
-        ) as atc_description
-   , case
-        when meds.atc_code is not null then 'manual'
-        when rxatc.atc_3_name is not null then 'automatic'
-        end as atc_mapping_method
-   , meds.route
-   , meds.strength
-   , meds.quantity
-   , meds.quantity_unit
-   , meds.days_supply
-   , meds.practitioner_id
-   , meds.data_source
-   , meds.tuva_last_run
-   {{ tuva_extension_columns }}
-from {{ ref('core__stg_clinical_medication') }} as meds
-    left outer join {{ ref('terminology__ndc') }} as ndc
-        on meds.source_code_type = 'ndc'
-        and meds.source_code = ndc.ndc
-    left outer join {{ ref('terminology__rxnorm_to_atc') }} as rxatc
-        on meds.source_code_type = 'rxnorm'
-        and meds.source_code = rxatc.rxcui
+          ndc11 as ndc_lookup_code
+        , ndc11
+        , drug_id
+        , drug_name
+    from {{ ref('core__stg_coderx_packages') }}
 
+    union all
 
-{% else %}
+    select
+          replace(ndc, '-', '') as ndc_lookup_code
+        , ndc11
+        , drug_id
+        , drug_name
+    from {{ ref('core__stg_coderx_packages') }}
+    where ndc is not null
+      and replace(ndc, '-', '') <> ndc11
+),
 
- select
-     meds.medication_id
-   , meds.person_id
-   , meds.patient_id
-   , meds.encounter_id
-   , meds.dispensing_date
-   , meds.prescribing_date
-   , meds.source_code_type
-   , meds.source_code
-   , meds.source_description
-   , coalesce(
-        meds.ndc_code
-        , ndc.ndc
-        , custom_mapped_ndc.normalized_code
-        ) as ndc_code
-   , coalesce(
-        meds.ndc_description
-        , ndc.fda_description
-        , ndc.rxnorm_description
-        , custom_mapped_ndc.normalized_description
-        ) as ndc_description
-   , case
-        when meds.ndc_code is not null then 'manual'
-        when ndc.ndc is not null then 'automatic'
-        when custom_mapped_ndc.not_mapped is not null then custom_mapped_ndc.not_mapped
-        when custom_mapped_ndc.normalized_code is not null then 'custom'
-        end as ndc_mapping_method
-   , coalesce(
-        meds.rxnorm_code
-        , rxatc.rxcui
-        , custom_mapped_rxnorm.normalized_code
-        ) as rxnorm_code
-   , coalesce(
-        meds.rxnorm_code
-        , rxatc.rxnorm_description
-        , custom_mapped_rxnorm.normalized_description
-        ) as rxnorm_description
-   , case
-        when meds.rxnorm_code is not null then 'manual'
-        when rxatc.rxcui is not null then 'automatic'
-        when custom_mapped_rxnorm.not_mapped is not null then custom_mapped_rxnorm.not_mapped
-        when custom_mapped_rxnorm.normalized_code is not null then 'custom'
-        end as rxnorm_mapping_method
-   , coalesce(
-        meds.atc_code
-        , rxatc.atc_3_code
-        , custom_mapped_atc.normalized_code
-        ) as atc_code
-   , coalesce(
-        meds.atc_description
-        , rxatc.atc_3_name
-        , custom_mapped_atc.normalized_description
-        ) as atc_description
-   , case
-        when meds.atc_code is not null then 'manual'
-        when rxatc.atc_3_code is not null then 'automatic'
-        when custom_mapped_atc.not_mapped is not null then custom_mapped_atc.not_mapped
-        when custom_mapped_atc.normalized_code is not null then 'custom'
-        end as atc_mapping_method
-   , meds.route
-   , meds.strength
-   , meds.quantity
-   , meds.quantity_unit
-   , meds.days_supply
-   , meds.practitioner_id
-   , meds.data_source
-   , meds.tuva_last_run
-   {{ tuva_extension_columns }}
-from {{ ref('core__stg_clinical_medication') }} meds
-    left join {{ ref('terminology__ndc') }} ndc
-        on meds.source_code_type = 'ndc'
-        and meds.source_code = ndc.ndc
-    left join {{ ref('terminology__rxnorm_to_atc') }} rxatc
-        on meds.source_code_type = 'rxnorm'
-        and meds.source_code = rxatc.rxcui
-    left join {{ ref('custom_mapped') }} custom_mapped_ndc
-        on custom_mapped_ndc.normalized_code_type = 'ndc'
-        and ( lower(meds.source_code_type) = lower(custom_mapped_ndc.source_code_type)
-            or ( meds.source_code_type is null and custom_mapped_ndc.source_code_type is null)
-            )
-        and (meds.source_code = custom_mapped_ndc.source_code
-            or ( meds.source_code is null and custom_mapped_ndc.source_code is null)
-            )
-        and (meds.source_description = custom_mapped_ndc.source_description
-            or ( meds.source_description is null and custom_mapped_ndc.source_description is null)
-            )
-        and not (meds.source_code is null and meds.source_description is null)
-    left join {{ ref('custom_mapped') }} custom_mapped_rxnorm
-        on custom_mapped_rxnorm.normalized_code_type = 'rxnorm'
-        and ( lower(meds.source_code_type) = lower(custom_mapped_rxnorm.source_code_type)
-            or ( meds.source_code_type is null and custom_mapped_rxnorm.source_code_type is null)
-            )
-        and (meds.source_code = custom_mapped_rxnorm.source_code
-            or ( meds.source_code is null and custom_mapped_rxnorm.source_code is null)
-            )
-        and (meds.source_description = custom_mapped_rxnorm.source_description
-            or ( meds.source_description is null and custom_mapped_rxnorm.source_description is null)
-            )
-        and not (meds.source_code is null and meds.source_description is null)
-    left join {{ ref('custom_mapped') }} custom_mapped_atc
-        on custom_mapped_atc.normalized_code_type = 'atc'
-        and ( lower(meds.source_code_type) = lower(custom_mapped_atc.source_code_type)
-            or ( meds.source_code_type is null and custom_mapped_atc.source_code_type is null)
-            )
-        and (meds.source_code = custom_mapped_atc.source_code
-            or ( meds.source_code is null and custom_mapped_atc.source_code is null)
-            )
-        and (meds.source_description = custom_mapped_atc.source_description
-            or ( meds.source_description is null and custom_mapped_atc.source_description is null)
-            )
-        and not (meds.source_code is null and meds.source_description is null)
-{% endif %}
-   )
+all_medications as (
+{% if the_tuva_project.tuva_boolean_var('clinical_enabled', false)
+    and the_tuva_project.tuva_boolean_var('claims_enabled', false) -%}
 
+    {{ smart_union([ref('core__stg_claims_medication'), ref('normalized__medication')]) }}
 
--- add auto rxnorm + atc
+{% elif the_tuva_project.tuva_boolean_var('clinical_enabled', false) -%}
+
+    select *
+    from {{ ref('normalized__medication') }}
+
+{% elif the_tuva_project.tuva_boolean_var('claims_enabled', false) -%}
+
+    select *
+    from {{ ref('core__stg_claims_medication') }}
+
+{%- endif %}
+),
+
+source_mapping as (
+    select
+          meds.medication_id
+        , meds.source_type
+        , meds.person_id
+        , meds.member_id
+        , meds.patient_id
+        , meds.encounter_id
+        , meds.claim_id
+        , meds.claim_line_number
+        , meds.payer
+        , meds.{{ quote_column('plan') }}
+        , meds.dispensing_date
+        , meds.prescribing_date
+        , meds.source_code_type
+        , meds.source_code
+        , case
+            when lower(cast(meds.source_type as {{ dbt.type_string() }})) = 'claims'
+              then source_package.drug_name
+            else meds.source_description
+          end as source_description
+        , coalesce(meds.ndc_code, source_package.ndc11) as ndc_code
+        , meds.ndc_description
+        , coalesce(meds.rxnorm_code, source_drug.drug_id) as rxnorm_code
+        , meds.atc_code
+        , meds.route
+        , meds.strength
+        , meds.quantity
+        , meds.quantity_unit
+        , meds.days_supply
+        , meds.practitioner_id
+        , meds.data_source
+        , meds.ingest_datetime
+        , meds.tuva_last_run
+        {{ tuva_extension_columns_from_all_medications }}
+    from all_medications as meds
+    left join coderx_package_keys as source_package
+        on lower(cast(meds.source_code_type as {{ dbt.type_string() }})) = 'ndc'
+       and replace(cast(meds.source_code as {{ dbt.type_string() }}), '-', '')
+           = source_package.ndc_lookup_code
+    left join {{ ref('core__stg_coderx_drugs') }} as source_drug
+        on lower(cast(meds.source_code_type as {{ dbt.type_string() }})) = 'rxnorm'
+       and cast(meds.source_code as {{ dbt.type_string() }}) = source_drug.drug_id
+)
+
 select
-     sm.medication_id
-   , sm.person_id
-   , sm.patient_id
-   , sm.encounter_id
-   , sm.dispensing_date
-   , sm.prescribing_date
-   , sm.source_code_type
-   , sm.source_code
-   , sm.source_description
-   , sm.ndc_code
-   , sm.ndc_description
-   , sm.ndc_mapping_method
-   , coalesce(
-        sm.rxnorm_code
-        , ndc.rxcui
-        ) as rxnorm_code
-   , coalesce(
-        sm.rxnorm_description
-        , ndc.rxnorm_description
-        ) as rxnorm_description
-   , case
-        when sm.rxnorm_mapping_method is not null then sm.rxnorm_mapping_method
-        when ndc.rxcui is not null then 'automatic'
-        end as rxnorm_mapping_method
-   , coalesce(
-        sm.atc_code
-        , rxatc.atc_3_code
-        ) as atc_code
-   , coalesce(
-        sm.atc_description
-        , rxatc.atc_3_name
-        ) as atc_description
-   , case
-        when sm.atc_mapping_method is not null then sm.atc_mapping_method
-        when rxatc.atc_3_name is not null then 'automatic'
-        end as atc_mapping_method
-   , sm.route
-   , sm.strength
-   , sm.quantity
-   , sm.quantity_unit
-   , sm.days_supply
-   , sm.practitioner_id
-   {{ select_extension_columns(ref('input_layer__medication'), alias='sm') }}
-   {{ tuva_metadata_columns }}
+      sm.medication_id
+    , sm.source_type
+    , sm.person_id
+    , sm.member_id
+    , sm.patient_id
+    , sm.encounter_id
+    , sm.claim_id
+    , sm.claim_line_number
+    , sm.payer
+    , sm.{{ quote_column('plan') }}
+    , sm.dispensing_date
+    , sm.prescribing_date
+    , sm.source_code_type
+    , sm.source_code
+    , sm.source_description
+    , sm.ndc_code
+    , coalesce(
+          case
+            when coalesce(lower(sm.source_type), '') <> 'claims' then sm.ndc_description
+          end
+        , ndc_package.drug_name
+        {% if not use_coderx_enterprise %}
+        , sm.ndc_description
+        {% endif %}
+      ) as ndc_description
+    , coalesce(sm.rxnorm_code, ndc_package.drug_id) as rxnorm_code
+    , case
+        when sm.rxnorm_code is not null then rxnorm_drug.drug_name
+        else coalesce(rxnorm_drug.drug_name, ndc_package.drug_name)
+      end as rxnorm_description
+    , coalesce(sm.atc_code, drug_class.atc_3_code) as atc_code
+    , case
+        when sm.atc_code is null then drug_class.atc_3_name
+        when sm.atc_code = drug_class.atc_1_code then drug_class.atc_1_name
+        when sm.atc_code = drug_class.atc_2_code then drug_class.atc_2_name
+        when sm.atc_code = drug_class.atc_3_code then drug_class.atc_3_name
+        when sm.atc_code = drug_class.atc_4_code then drug_class.atc_4_name
+      end as atc_description
+    , sm.route
+    , sm.strength
+    , sm.quantity
+    , sm.quantity_unit
+    , sm.days_supply
+    , sm.practitioner_id
+    {{ tuva_extension_columns_from_source_mapping }}
+    {{ tuva_metadata_columns }}
 from source_mapping as sm
-    left outer join {{ ref('terminology__ndc') }} as ndc
-        on sm.ndc_code = ndc.ndc
-    left outer join {{ ref('terminology__rxnorm_to_atc') }} as rxatc
-        on coalesce(sm.rxnorm_code, ndc.rxcui) = rxatc.rxcui
+left join coderx_package_keys as ndc_package
+    on replace(cast(sm.ndc_code as {{ dbt.type_string() }}), '-', '')
+       = ndc_package.ndc_lookup_code
+left join {{ ref('core__stg_coderx_drugs') }} as rxnorm_drug
+    on coalesce(sm.rxnorm_code, ndc_package.drug_id) = rxnorm_drug.drug_id
+left join {{ ref('core__stg_coderx_classes') }} as drug_class
+    on coalesce(sm.rxnorm_code, ndc_package.drug_id) = drug_class.drug_id

@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled',var('claims_enabled',var('tuva_marts_enabled',False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -17,6 +17,7 @@ where relative_rank = 1
 
 select r.claim_id
 , r.claim_line_number
+, r.data_source
 , r.old_encounter_id
 , x.encounter_type
 from rank_cte as r

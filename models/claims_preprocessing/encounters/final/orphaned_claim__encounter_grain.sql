@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled',var('claims_enabled',var('tuva_marts_enabled',False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -12,6 +12,7 @@ with encounter_date as (
     inner join {{ ref('encounters__orphaned_claims') }} as cli
       on stg.claim_id = cli.claim_id
       and stg.claim_line_number = cli.claim_line_number
+      and stg.data_source = cli.data_source
     group by
         cli.encounter_id
 )
@@ -29,6 +30,8 @@ order by stg.claim_type, stg.start_date) as encounter_row_number --institutional
     inner join {{ ref('encounters__orphaned_claims') }} as cli on stg.claim_id = cli.claim_id
     and
     stg.claim_line_number = cli.claim_line_number
+    and
+    stg.data_source = cli.data_source
     inner join encounter_date as d on cli.encounter_id = d.encounter_id
 )
 
@@ -36,7 +39,7 @@ order by stg.claim_type, stg.start_date) as encounter_row_number --institutional
     select
         patient_data_source_id
         , birth_date
-        , gender
+        , sex
         , race
     from {{ ref('encounters__stg_eligibility') }}
     where patient_row_num = 1
@@ -76,15 +79,15 @@ order by sum(paid_amount) desc) as paid_order
 
 , highest_paid_facility as (
   select encounter_id
-  , facility_id
+  , facility_npi
   , row_number() over (partition by encounter_id
 order by sum(paid_amount) desc) as paid_order
   , sum(paid_amount) as paid_amount
   from detail_values
-  where facility_id is not null
+  where facility_npi is not null
   group by
    encounter_id
-  , facility_id
+  , facility_npi
 )
 
 , highest_paid_pos as (
@@ -117,6 +120,8 @@ order by sum(paid_amount) desc) as paid_order
     left outer join {{ ref('service_category__service_category_grouper') }} as scr on d.claim_id = scr.claim_id
     and
     scr.claim_line_number = d.claim_line_number
+    and
+    scr.data_source = d.data_source
     group by d.encounter_id
 )
 
@@ -127,12 +132,12 @@ select d.encounter_id
 , tot.encounter_type
 , tot.encounter_group
 , {{ dbt.datediff("birth_date","d.encounter_start_date","day") }} / 365 as admit_age
-, e.gender
+, e.sex
 , e.race
 , hp.diagnosis_code_type as primary_diagnosis_code_type
 , hp.diagnosis_code_1 as primary_diagnosis_code
 , coalesce(icd10cm.long_description, icd9cm.long_description) as primary_diagnosis_description
-, hf.facility_id as facility_id
+, hf.facility_npi as facility_npi
 , b.provider_organization_name as facility_name
 , b.primary_specialty_description as facility_type
 , sc.lab_flag
@@ -163,8 +168,8 @@ and
 pos.paid_order = 1
 left outer join patient as e
   on d.patient_data_source_id = e.patient_data_source_id
-left outer join {{ ref('terminology__provider') }} as b
-  on hf.facility_id = b.npi
+left outer join {{ ref('provider_data__provider') }} as b
+  on hf.facility_npi = b.npi
 left outer join {{ ref('terminology__icd_10_cm') }} as icd10cm
   on hp.diagnosis_code_1 = icd10cm.icd_10_cm
   and hp.diagnosis_code_type = 'icd-10-cm'

@@ -2,8 +2,12 @@ version: 2
 
 seeds:
   - name: terminology__act_site
-    description: 'This seed contains An anatomical location on a human which can be the focus of an act.'
+    description: |-
+      Act site codes identify anatomical locations involved in a clinical act, such as where a procedure
+      was performed or where a medication or immunization was administered. Tuva uses this terminology in
+      the core immunization model to translate immunization body site codes into body site descriptions.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__act_site.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: act_site
@@ -21,8 +25,13 @@ seeds:
         description: 'A description of the anatomical location.'
 
   - name: terminology__admit_source
-    description: 'NUBC Admit Sources'
+    description: |-
+      Admit source codes identify where a patient was admitted from before an institutional stay. Tuva
+      sources this terminology from ResDAC variable documentation for Medicare claims data. Tuva uses this
+      asset in core encounter models, input normalization models, claims preprocessing service category
+      and encounter grouping models, and data quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__admit_source.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: admit_source
@@ -46,8 +55,13 @@ seeds:
         description: 'Description related to newborn admission. For use when admit type code = 4 (Newborn)'
 
   - name: terminology__admit_type
-    description: 'Seed containing NUBC admission types and descriptions.'
+    description: |-
+      Admit type codes identify the priority, purpose, or category of an institutional admission. Tuva
+      sources this terminology from ResDAC variable documentation for Medicare claims data. Tuva uses this
+      asset in core encounter models, input normalization models, claims preprocessing service category
+      and encounter grouping models, and data quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__admit_type.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: admit_type
@@ -67,8 +81,11 @@ seeds:
         description: 'A description of the admission type.'
 
   - name: terminology__appointment_cancellation_reason
-    description: 'The coded reason for the appointment being cancelled.'
+    description: |-
+      Appointment cancellation reason codes identify why a scheduled clinical appointment was cancelled.
+      They are maintained by HL7 FHIR and remain available as a terminology reference.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__appointment_cancellation_reason.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: appointment_cancellation_reason
@@ -86,8 +103,12 @@ seeds:
         description: 'The description of the cancellation reason code.'
 
   - name: terminology__appointment_status
-    description: 'The coded status for the appointment.'
+    description: |-
+      Appointment status codes identify the lifecycle state of a scheduled clinical appointment, such as
+      booked, fulfilled, cancelled, or no-show. They are maintained by HL7 FHIR and remain available as a
+      terminology reference.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__appointment_status.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: appointment_status
@@ -101,8 +122,11 @@ seeds:
         description: 'The code for the appointment status.'
 
   - name: terminology__appointment_type
-    description: 'Appointment type code.'
+    description: |-
+      Appointment type codes categorize the purpose or kind of scheduled clinical visit. They are
+      maintained by HL7 FHIR and remain available as a terminology reference.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__appointment_type.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: appointment_type
@@ -120,8 +144,12 @@ seeds:
         description: 'The description of the appointment type code.'
 
   - name: terminology__apr_drg
-    description: 'Seed containing All Patient Refined Diagnosis Related Groups (APR-DRG) codes and descriptions.'
+    description: |-
+      APR-DRG codes group inpatient stays by clinical condition, severity of illness, and risk of
+      mortality. They are maintained by Solventum. Tuva uses this terminology set to pull in descriptions
+      when your claims data uses APR-DRG codes.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__apr_drg.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: apr_drg
@@ -137,6 +165,7 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         apr_drg_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: apr_drg_code
         description: 'The All Patient Refined Diagnosis Related Group (APR-DRG) code.'
@@ -146,10 +175,17 @@ seeds:
         description: 'The Major Diagnostic Category (MDC) code associated with the APR-DRG.'
       - name: apr_drg_description
         description: 'The description of the All Patient Refined Diagnosis Related Group (APR-DRG).'
+      - name: deprecated
+        description: 'Indicates whether the APR-DRG code is absent from v43.0 (1) or current in v43.0 (0).'
 
   - name: terminology__bill_type
-    description: 'Seed containing NUBC billing types and descriptions.'
+    description: |-
+      Type of bill codes identify the facility type and bill classification for institutional claims. Tuva
+      sources this terminology from ResDAC variable documentation for Medicaid and Medicare claims data.
+      Tuva uses this asset in input normalization models, claims preprocessing service category and
+      encounter grouping models, and data quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__bill_type.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: bill_type
@@ -174,8 +210,14 @@ seeds:
         description: 'The date when the billing type code was deprecated.'
 
   - name: terminology__claim_type
-    description: 'Seed containing claim types.'
+    description: |-
+      Claim type values identify whether a claim is professional, institutional, dental, vision, or
+      undetermined. They are maintained by Tuva Health for normalized claim processing in Tuva Core. Tuva
+      uses these values as the normalized claim_type vocabulary in the input layer, claims preprocessing,
+      core claims models, encounter grouping, and data quality logic; current models do not need to join
+      to this terminology table to use them.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__claim_type.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: claim_type
@@ -190,8 +232,12 @@ seeds:
         description: 'The type of the claim.'
 
   - name: terminology__cvx
-    description: 'Seed containing cvx codes and descriptions.'
+    description: |-
+      CVX codes identify vaccines administered in immunization records. They are maintained by the CDC
+      National Center for Immunization and Respiratory Diseases. Tuva uses this asset in the core
+      immunization model.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__cvx.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: cvx
@@ -205,6 +251,10 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         long_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        status: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        last_updated: date
+        deprecated: integer
     columns:
       - name: cvx
         description: 'CVX code, which is a unique identifier for vaccines.'
@@ -212,10 +262,22 @@ seeds:
         description: 'Short description of the vaccine.'
       - name: long_description
         description: 'Long description of the vaccine.'
+      - name: status
+        description: 'Lifecycle status supplied by CDC.'
+      - name: last_updated
+        description: 'Date the CVX record was last updated by CDC.'
+      - name: deprecated
+        description: 'Indicates whether CDC marks the CVX code Inactive or Never Active (1) rather than current (0).'
 
   - name: terminology__discharge_disposition
-    description: 'Seed containing NUBC discharge disposition codes and descriptions.'
+    description: |-
+      Discharge disposition codes identify a patient status or destination at the end of an institutional
+      encounter. Tuva sources this terminology from ResDAC variable documentation for Medicare claims
+      data. Tuva uses this asset in core encounter models, input normalization models, claims
+      preprocessing service category and encounter grouping models, data quality checks, and retained
+      readmissions models in the Quality Measures package.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__discharge_disposition.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: discharge_disposition
@@ -231,8 +293,13 @@ seeds:
         description: 'A description of the discharge disposition.'
 
   - name: terminology__encounter_type
-    description: 'Seed containing Tuva maintained encounter types.'
+    description: |-
+      Encounter type values classify care settings and encounter categories in Tuva Core. They are
+      maintained by Tuva Health. Tuva uses these values as the normalized encounter_type vocabulary in
+      core encounter, claims utilization, semantic layer, and downstream utilization analytics; current
+      models do not need to join to this terminology table to use them.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__encounter_type.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: encounter_type
@@ -251,8 +318,13 @@ seeds:
         description: 'The type of the encounter.'
 
   - name: terminology__ethnicity
-    description: 'Seed containing ethnicity codes and descriptions.'
+    description: |-
+      Ethnicity values standardize patient ethnicity reporting in Tuva Core. They are maintained by Tuva
+      Health. Tuva uses these values as the expected normalized ethnicity vocabulary for eligibility,
+      patient, and data quality logic; current models carry the value through without joining to this
+      terminology table.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__ethnicity.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: ethnicity
@@ -268,25 +340,34 @@ seeds:
       - name: description
         description: 'A description of the ethnicity.'
 
-  - name: terminology__gender
-    description: 'Seed containing gender codes and descriptions.'
+  - name: terminology__sex
+    description: |-
+      Sex values standardize patient sex fields accepted by Tuva Core. They are maintained by Tuva
+      Health. Tuva uses these values as the expected normalized sex vocabulary for eligibility, patient,
+      and data quality logic; current models carry the value through without joining to this terminology
+      table.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__sex.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: gender
+      alias: sex
       tags:
         - terminology
         - data_profiling
       column_types:
-        gender: |
+        sex: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
     columns:
-      - name: gender
-        description: 'The gender code.'
+      - name: sex
+        description: 'The sex value.'
 
   - name: terminology__hcpcs_level_2
-    description: 'Seed containing HCPCS Level II codes and descriptions.'
+    description: |-
+      HCPCS Level II codes identify medical supplies, drugs, ambulance services, durable medical
+      equipment, and other non-CPT services. They are maintained by CMS. Tuva uses this asset in the core
+      observation model and core procedure models.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__hcpcs_level_2.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: hcpcs_level_2
@@ -299,9 +380,10 @@ seeds:
         recid: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         long_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(2000) {%- endif -%}
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- elif target.type == "snowflake" -%} varchar(16777216) {%- elif target.type in ("fabric", "sqlserver") -%} varchar(max) {%- else -%} varchar(65535) {%- endif -%}
         short_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: hcpcs
         description: 'The HCPCS Level II code.'
@@ -313,15 +395,26 @@ seeds:
         description: 'The long description of the HCPCS code.'
       - name: short_description
         description: 'The short description of the HCPCS code.'
+      - name: deprecated
+        description: 'Indicates whether the HCPCS Level II code is terminated or absent from the October 2026 release (1) rather than current (0).'
 
-  - name: terminology__hcpcs_to_rbcs
-    description: HCPCS to RBCS crosswalk.
+  - name: terminology__restructured_betos
+    description: |-
+      Restructured BETOS maps HCPCS and CPT codes to Restructured BETOS Classification System categories
+      for grouping Medicare Part B services. It is maintained by CMS. Tuva publishes this asset for
+      Medicare service grouping, benchmarking, and downstream analytics; current Tuva Core models do not
+      join to it directly.
     config:
+      meta:
+        primary_key_columns:
+          - hcpcs_cd
+          - first_rbcs_release_year
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_seed('terminology','terminology__restructured_betos.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: hcpcs_to_rbcs
+      alias: restructured_betos
       tags: terminology
-      enabled: "{{ var('claims_preprocessing_enabled',var('tuva_marts_enabled',True)) }}"
       column_types:
         hcpcs_cd: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
@@ -345,10 +438,12 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} date {%- else -%} date {%- endif -%}
         hcpcs_cd_end_dt: |
           {%- if target.type in ("bigquery", "databricks") -%} date {%- else -%} date {%- endif -%}
-        rbcs_assignment_eff_dt: |
-          {%- if target.type in ("bigquery", "databricks") -%} date {%- else -%} date {%- endif -%}
-        current_flag: |
-          {%- if target.type in ("bigquery", "databricks") -%} numeric {%- elif target.type in ("athena") -%} int {%- else -%} numeric {%- endif -%}
+        rbcs_latest_assignment: integer
+        first_rbcs_release_year: integer
+        rbcs_analysis_start_dt: date
+        rbcs_analysis_end_dt: date
+        alt_assignment_method: integer
+        rbcs_id_ever_reassigned: integer
     columns:
       - name: hcpcs_cd
         description: HCPCS or CPT code.
@@ -380,14 +475,28 @@ seeds:
         description: HCPCS Code Effective Date.
       - name: hcpcs_cd_end_dt
         description: HCPCS Code End Date.
-      - name: rbcs_assignment_eff_dt
-        description: Provides users with the earliest date that the RBCS ID is effective.
-      - name: current_flag
-        description: Flag where 1 = the current version of the RBCS for that particular HCPCS_CD, 0 = old version.
+      - name: rbcs_latest_assignment
+        description: CMS flag where 1 identifies the latest RBCS assignment for the HCPCS code and 0 identifies an earlier assignment.
+      - name: first_rbcs_release_year
+        description: First RBCS release year in which this assignment appeared.
+      - name: rbcs_analysis_start_dt
+        description: Beginning of the CMS analysis period for this assignment.
+      - name: rbcs_analysis_end_dt
+        description: End of the CMS analysis period for this assignment.
+      - name: alt_assignment_method
+        description: CMS flag indicating use of an alternative assignment method.
+      - name: rbcs_id_ever_reassigned
+        description: CMS flag indicating whether the HCPCS code has ever been reassigned to another RBCS ID.
 
   - name: terminology__icd_9_cm
-    description: 'Seed containing ICD-9-CM codes and descriptions.'
+    description: |-
+      ICD-9-CM diagnosis codes identify diagnoses in historical claims and clinical data before the U.S.
+      transition to ICD-10-CM. They were maintained by CMS and are no longer updated for
+      current U.S. reporting. Tuva uses this asset in the core observation model, core condition models,
+      core encounter models, claims preprocessing service category and encounter grouping models, and data
+      quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__icd_9_cm.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: icd_9_cm
@@ -403,6 +512,7 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         short_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: icd_9_cm
         description: 'The ICD-9-CM code.'
@@ -410,10 +520,17 @@ seeds:
         description: 'The long description of the ICD-9-CM code.'
       - name: short_description
         description: 'The short description of the ICD-9-CM code.'
+      - name: deprecated
+        description: 'Indicates whether the code is historical and absent from final ICD-9-CM v32 (1) or present in v32 (0).'
 
   - name: terminology__icd_9_pcs
-    description: 'Seed containing ICD-9-PCS codes and descriptions.'
+    description: |-
+      ICD-9 procedure codes identify inpatient procedures in historical claims data before the U.S.
+      transition to ICD-10-PCS. They were maintained by CMS and are no longer updated for current U.S.
+      reporting. Tuva uses this asset in the core observation model, core procedure models, and data
+      quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__icd_9_pcs.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: icd_9_pcs
@@ -429,6 +546,7 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         short_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: icd_9_pcs
         description: 'The ICD-9-PCS code.'
@@ -436,11 +554,20 @@ seeds:
         description: 'The long description of the ICD-9-PCS code.'
       - name: short_description
         description: 'The short description of the ICD-9-PCS code.'
+      - name: deprecated
+        description: 'Indicates whether the code is historical and absent from final ICD-9 procedure v32 (1) or present in v32 (0).'
 
 
   - name: terminology__icd_10_cm
-    description: 'Seed containing ICD-10-CM codes and descriptions.'
+    description: |-
+      ICD-10-CM codes identify specific diseases, symptoms, injuries, and other health conditions. They
+      are used for diagnosis coding, billing, cohorting, quality measurement, and risk adjustment and are
+      sourced by Tuva from CMS ICD-10-CM files. Tuva uses this asset in the core observation model, core
+      condition models, core encounter models, claims preprocessing service category and encounter
+      grouping models, data quality checks, and retained readmissions models in the Quality Measures
+      package.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__icd_10_cm.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: icd_10_cm
@@ -452,25 +579,39 @@ seeds:
       column_types:
         icd_10_cm: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        header_flag: |
+        billable_code_flag: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         short_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         long_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: icd_10_cm
         description: 'Alpha-Numeric ICD-10-CM Code.'
-      - name: header_flag
-        description: 'Indicates a diagnosis "header" with a 1. A value of 1 means the code is NOT billable for HIPAA covered entities, and is just included in the ICD-10-CM listing for organizational purposes. A value of 0 indicates the code IS billable for HIPAA covered entities and is a valid diagnosis code. It should be uncommon for codes in claims or clinical data sources to contain header values, but if you want to ensure you are not capturing non-billable codes, filter out all codes from this table where header_flag = 1'
+      - name: billable_code_flag
+        description: 'Indicates a diagnosis is billable with a 1. A value of 1 means the code IS billable for HIPAA covered entities and is a valid diagnosis code. A value of 0 indicates the code IS NOT billable for HIPAA covered entities, and is included in the ICD-10-CM listing for organizational purposes. It should be uncommon for codes in claims or clinical data sources to contain header values, but if you want to ensure you are not capturing non-billable codes, filter out all codes from this table where billable_code_flag = 0'
       - name: short_description
         description: 'The short description of the ICD-10-CM code.'
       - name: long_description
         description: 'The long description of the ICD-10-CM code.'
+      - name: deprecated
+        description: 'Indicates whether the ICD-10-CM code is absent from the FY 2027 release (1) or current in FY 2027 (0).'
 
   - name: terminology__icd_10_pcs
-    description: 'Seed containing ICD-10-PCS codes and descriptions.'
+    description: |-
+      ICD-10-PCS codes identify inpatient hospital procedures in U.S. administrative data. They are used
+      for procedure coding, billing, grouping, and analytics and are maintained by CMS. This table includes
+      the current CMS ICD-10-PCS code set and historical ICD-10-PCS codes retained by AHRQ PRCCSR so
+      older claims can still be validated and grouped. Tuva uses this asset in the core observation model,
+      core procedure models, data quality checks, and retained readmissions models in the Quality
+      Measures package.
     config:
+      meta:
+        primary_key_columns:
+          - icd_10_pcs
+        primary_key_strategy: natural_single_column
+      post_hook: "{{ load_versioned_seed('terminology','terminology__icd_10_pcs.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: icd_10_pcs
@@ -483,15 +624,21 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: icd_10_pcs
         description: 'The ICD-10-PCS code.'
       - name: description
         description: 'The description of the ICD-10-PCS code.'
+      - name: deprecated
+        description: 'Indicates whether the ICD-10-PCS code is no longer active in the current CMS code file. A value of 1 means the code is deprecated; a value of 0 means the code is active.'
 
   - name: terminology__immunization_route_code
-    description: 'This seed contains the administrative routes used during vaccination.'
+    description: |-
+      Immunization route codes identify how a vaccine was administered, such as intramuscular or oral.
+      They are maintained by HL7 FHIR. Tuva uses this asset in the core immunization model.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__immunization_route_code.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: immunization_route_code
@@ -509,8 +656,11 @@ seeds:
         description: 'A description of the route of administration for the immunization.'
 
   - name: terminology__immunization_status_reason
-    description: 'This seed describes the reason why a dose of vaccine was not administered.'
+    description: |-
+      Immunization status reason codes identify why an immunization was not completed or did not occur as
+      expected. They are maintained by HL7 FHIR. Tuva uses this asset in the core immunization model.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__immunization_status_reason.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: immunization_status_reason
@@ -532,8 +682,11 @@ seeds:
         description: 'A description of the immunization status reason.'
 
   - name: terminology__immunization_status
-    description: 'This seed contains the current status of the administered dose of vaccine.'
+    description: |-
+      Immunization status codes identify whether an immunization record is completed, entered in error, or
+      not done. They are maintained by HL7 FHIR. Tuva uses this asset in the core immunization model.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__immunization_status.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: immunization_status
@@ -551,8 +704,12 @@ seeds:
         description: 'The display of the immunization status.'
 
   - name: terminology__loinc
-    description: 'Seed containing LOINC codes and descriptions.'
+    description: |-
+      LOINC codes identify laboratory tests, clinical measurements, survey instruments, and other
+      observations. They are maintained by the Regenstrief Institute and used to standardize lab and
+      observation data. Tuva uses this asset in the core lab result model and the core observation model.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__loinc.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: loinc
@@ -599,6 +756,7 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         version_last_changed: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: loinc
         description: 'The LOINC code.'
@@ -626,6 +784,12 @@ seeds:
         description: 'A code representing the top-level category for the test.'
       - name: class_type_description
         description: 'The top-level category for the test; Laboratory, Clinical, Claims attachments, or Surveys.'
+      - name: paneltype
+        description: 'Indicates whether the term is a panel, an organizer, or an individual observation in the LOINC source.'
+      - name: order_obs
+        description: 'Indicates whether the term is commonly used as an order, an observation, or both.'
+      - name: example_units
+        description: 'Example units supplied by LOINC for the term, when available.'
       - name: external_copyright_notice
         description: External copyright holder's copyright notice for this LOINC code.
       - name: status
@@ -634,10 +798,17 @@ seeds:
         description: 'The first release version of LOINC that included this code.'
       - name: version_last_changed
         description: 'The last LOINC version in which this record was changed.'
+      - name: deprecated
+        description: 'Indicates whether the LOINC term is Deprecated or Discouraged, or is absent from LOINC 2.83 (1), rather than current (0).'
 
   - name: terminology__loinc_deprecated_mapping
-    description: 'Seed containing deprecated LOINC codes and their replacements.'
+    description: |-
+      LOINC deprecated mappings identify replacement or successor terms for deprecated LOINC codes. They
+      are maintained by the Regenstrief Institute. Tuva publishes this asset to support LOINC maintenance
+      and user-led cleanup of deprecated lab and observation codes; current Tuva Core models do not join
+      to it directly.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__loinc_deprecated_mapping.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: loinc_deprecated_mapping
@@ -664,15 +835,20 @@ seeds:
       - name: comment
         description: 'Narrative text that explains the rationale for using the recommended replacement term.'
       - name: final_map_to
-        description: 'If there are multiple steps of deprecated codes, this is the final (active) code.'
+        description: 'The terminal code in the available replacement chain. It may remain noncurrent when LOINC provides no further successor relationship.'
       - name: all_comments
-        description: 'An aggregation of comments for any mapping steps between the deprecated code and the active code.'
+        description: 'An aggregation of comments for the available mapping steps between the deprecated code and the terminal code.'
       - name: depth
-        description: 'How many steps this mapping is to the active code.'
+        description: 'The number of additional mapping steps after map_to that lead to final_map_to.'
 
   - name: terminology__mdc
-    description: 'Seed containing Major Diagnostic Categories (MDC) codes and descriptions.'
+    description: |-
+      Major Diagnostic Categories group MS-DRGs into broad clinical body-system categories. They are
+      maintained by CMS as part of the inpatient prospective payment system grouping logic. Tuva publishes
+      this asset for inpatient DRG analytics and user-led enrichment of major diagnostic categories;
+      current Tuva Core models do not join to it directly.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__mdc.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: mdc
@@ -689,8 +865,13 @@ seeds:
         description: 'The description of the Major Diagnostic Category (MDC).'
 
   - name: terminology__medicare_dual_eligibility
-    description: 'Seed containing Medicare dual eligibility status codes and descriptions.'
+    description: |-
+      Medicare dual eligibility codes identify a beneficiary Medicaid eligibility and cost-sharing status.
+      They are maintained by CMS for Medicare enrollment and eligibility analytics. Tuva uses these values
+      as the expected vocabulary for dual_status_code in eligibility and core eligibility outputs; current
+      models carry the code through without joining to this terminology table.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__medicare_dual_eligibility.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: medicare_dual_eligibility
@@ -703,15 +884,24 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         dual_status_description: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: dual_status_code
         description: 'The code representing dual eligibility status.'
       - name: dual_status_description
         description: 'A description of the dual eligibility status.'
+      - name: deprecated
+        description: 'Indicates whether the dual-status value is historical (1) rather than current (0).'
 
   - name: terminology__medicare_orec
-    description: 'Seed containing Medicare original reason for entitlement (OREC) codes and descriptions.'
+    description: |-
+      Medicare original reason for entitlement codes identify why a beneficiary first became entitled to
+      Medicare, such as age, disability, or ESRD. They are maintained by CMS for Medicare enrollment
+      analytics. Tuva uses these values as the expected vocabulary for original_reason_entitlement_code in
+      eligibility and core eligibility outputs; current models carry the code through without joining to
+      this terminology table.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__medicare_orec.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: medicare_orec
@@ -731,11 +921,15 @@ seeds:
         description: 'A description of the original reason for Medicare entitlement.'
 
   - name: terminology__medicare_status
-    description: 'Seed containing Medicare status codes and descriptions.'
+    description: |-
+      Medicare status codes identify beneficiary Medicare enrollment status categories used in claims and
+      eligibility analytics. They are maintained by CMS. Tuva uses these values as the expected vocabulary
+      for medicare_status_code in eligibility and core eligibility outputs; current models carry the code
+      through without joining to this terminology table.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__medicare_status.csv.gz') }}"
       schema: |
-        {%- if var('terminology_schema',None) != None -%}{{var('terminology_schema')}}
-        {%- elif var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology
         {% else %}terminology{%- endif -%}
       alias: medicare_status
       tags:
@@ -754,8 +948,13 @@ seeds:
         description: 'A description of the Medicare status.'
 
   - name: terminology__ms_drg_weights_los
-    description: 'Seed containing Medicare Severity Diagnosis Related Groups (MS-DRG) weights and benchmark length of stay values from CMS.'
+    description: |-
+      MS-DRG weights and length-of-stay values provide relative weights and average stay benchmarks for
+      Medicare inpatient payment and analytics. They are maintained by CMS. Tuva publishes this asset for
+      inpatient payment, benchmarking, and user-led MS-DRG enrichment; current Tuva Core models do not
+      join to it directly.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__ms_drg_weights_los.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: ms_drg_weights_los
@@ -811,8 +1010,14 @@ seeds:
         description: 'The arithmetic mean length of stay for this DRG.'
 
   - name: terminology__ms_drg
-    description: 'Seed containing Medicare Severity Diagnosis Related Groups (MS-DRG) codes and descriptions.'
+    description: |-
+      MS-DRG codes group acute inpatient stays for Medicare payment based on diagnoses, procedures,
+      discharge status, and patient characteristics. They are maintained by CMS. Tuva uses this asset in
+      core encounter models, input normalization models, claims preprocessing service category and
+      encounter grouping models, data quality checks, and retained readmissions models in the Quality
+      Measures package.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__ms_drg.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: ms_drg
@@ -846,36 +1051,66 @@ seeds:
       - name: deprecated_date
         description: 'The date when the MS-DRG code was deprecated.'
 
-  - name: terminology__ndc
-    description: 'This file collects all NDCs collected by the FDA and RxNorm, and compiles them into one list. The file is maintained by [CodeRX](https://coderx.io/) in partnership with Tuva Health.'
+  - name: terminology__coderx_packages
+    description: |-
+      CodeRx Open package records map National Drug Codes to RxNorm drug concepts. Tuva distributes this
+      annual open snapshot for medication enrichment, pharmacy normalization, and data quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__coderx_packages.csv.gz') }}"
       schema: |
-        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: ndc
+        {%- if var('tuva_schema_prefix', None) != None -%}{{ var('tuva_schema_prefix') }}_terminology{% else %}terminology{%- endif -%}
+      alias: coderx_packages
       tags:
         - terminology
       column_types:
+        ndc11: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(11) {%- endif -%}
         ndc: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(20) {%- endif -%}
+        drug_id: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        rxcui: |
+        drug_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
+        is_brand: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(10) {%- endif -%}
+        clinical_drug_id: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        rxnorm_description: |
+        clinical_drug_name: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
-        fda_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
+        active: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(10) {%- endif -%}
+        prescribable: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(10) {%- endif -%}
     columns:
+      - name: ndc11
+        description: Eleven-digit National Drug Code for the package.
+        tests:
+          - not_null
+          - unique
       - name: ndc
-        description: 'The National Drug Code (NDC).'
-      - name: rxcui
-        description: 'The RxCUI identifier associated with the NDC.'
-      - name: rxnorm_description
-        description: 'The description of the RxNorm concept.'
-      - name: fda_description
-        description: 'The FDA description of the drug.'
+        description: Hyphenated ten-digit National Drug Code when CodeRx supplies one.
+      - name: drug_id
+        description: RxNorm RxCUI for the drug associated with the package.
+      - name: drug_name
+        description: RxNorm name for the drug associated with the package.
+      - name: is_brand
+        description: Indicates whether the drug concept is branded.
+      - name: clinical_drug_id
+        description: RxNorm RxCUI for the corresponding unbranded clinical drug.
+      - name: clinical_drug_name
+        description: RxNorm name for the corresponding unbranded clinical drug.
+      - name: active
+        description: Indicates whether the CodeRx record is active.
+      - name: prescribable
+        description: Indicates whether the CodeRx record is prescribable.
 
   - name: terminology__observation_type
-    description: 'Seed containing observation types used by HEDIS/FHIR US Core, with an other category. https://terminology.hl7.org/1.0.0/CodeSystem-observation-category.html'
+    description: |-
+      Observation type values classify clinical observations in Tuva Core, including social history, vital
+      signs, survey, and other observation categories. They are maintained by Tuva Health. Tuva uses this
+      asset in the core observation model.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__observation_type.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       tags:
@@ -887,40 +1122,13 @@ seeds:
       - name: observation_type
         description: The type of observation.
 
-  - name: terminology__other_provider_taxonomy
-    description: 'Seed containing other provider taxonomy codes and descriptions.'
-    config:
-      schema: |
-        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      tags:
-        - terminology
-        - claims_preprocessing
-      alias: other_provider_taxonomy
-      column_types:
-        npi: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(35) {%- endif -%}
-        taxonomy_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(35) {%- endif -%}
-        medicare_specialty_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(173) {%- endif -%}
-        description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(101) {%- endif -%}
-        primary_flag: integer
-    columns:
-      - name: npi
-        description: 'The National Provider Identifier (NPI).'
-      - name: taxonomy_code
-        description: 'The provider taxonomy code.'
-      - name: medicare_specialty_code
-        description: 'The Medicare specialty code.'
-      - name: description
-        description: 'Description of the provider taxonomy.'
-      - name: primary_flag
-        description: 'Indicates if this is the primary taxonomy (1) or not (0).'
-
   - name: terminology__payer_type
-    description: 'Seed containing payer types.'
+    description: |-
+      Payer type values standardize payer categories such as commercial, Medicare, Medicaid, and other
+      coverage types. They are maintained by Tuva Health. Tuva uses this asset in data quality checks and
+      as the expected normalized payer_type vocabulary for eligibility and core eligibility outputs.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__payer_type.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: payer_type
@@ -935,8 +1143,13 @@ seeds:
         description: 'The type of payer.'
 
   - name: terminology__place_of_service
-    description: 'Seed containing place of service codes and descriptions.'
+    description: |-
+      Place of service codes identify the setting where professional services were furnished, such as
+      office, inpatient hospital, or telehealth. They are maintained by CMS. Tuva uses this asset in input
+      normalization models, claims preprocessing service category and encounter grouping models, and data
+      quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__place_of_service.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: place_of_service
@@ -956,8 +1169,12 @@ seeds:
         description: 'A description of the place of service.'
 
   - name: terminology__present_on_admission
-    description: 'Seed containing present on admission (POA) indicator codes and descriptions.'
+    description: |-
+      Present-on-admission indicators identify whether a diagnosis was present when an inpatient admission
+      began. Tuva sources this terminology from CMS Medicare claims variable documentation. Tuva uses
+      this asset in core condition models and input normalization models.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__present_on_admission.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: present_on_admission
@@ -976,115 +1193,13 @@ seeds:
       - name: present_on_admit_description
         description: 'A description of the present on admission (POA) indicator.'
 
-  - name: terminology__provider
-    description: 'Seed containing provider information.'
-    config:
-      schema: |
-        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      tags:
-        - terminology
-        - claims_preprocessing
-      alias: provider
-      column_types:
-        npi: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(35) {%- endif -%}
-        entity_type_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(26) {%- endif -%}
-        entity_type_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(37) {%- endif -%}
-        primary_taxonomy_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(35) {%- endif -%}
-        primary_specialty_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(173) {%- endif -%}
-        provider_first_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(95) {%- endif -%}
-        provider_last_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(95) {%- endif -%}
-        provider_credential: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(95) {%- endif -%}
-        provider_organization_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(95) {%- endif -%}
-        provider_other_organization_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(95) {%- endif -%}
-        provider_other_organization_name_type_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(80) {%- endif -%}
-        provider_other_organization_name_type_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(95) {%- endif -%}
-        parent_organization_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(95) {%- endif -%}
-        practice_address_line_1: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(80) {%- endif -%}
-        practice_address_line_2: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(80) {%- endif -%}
-        practice_city: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(65) {%- endif -%}
-        practice_state: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(65) {%- endif -%}
-        practice_zip_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(42) {%- endif -%}
-        mailing_telephone_number: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(42) {%- endif -%}
-        location_telephone_number: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(42) {%- endif -%}
-        official_telephone_number: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(42) {%- endif -%}
-        last_updated: date
-        deactivation_date: date
-        deactivation_flag: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(80) {%- endif -%}
-    columns:
-      - name: npi
-        description: 'The National Provider Identifier (NPI).'
-      - name: entity_type_code
-        description: 'The entity type code of the provider.'
-      - name: entity_type_description
-        description: 'The entity type description of the provider.'
-      - name: primary_taxonomy_code
-        description: 'The primary taxonomy code of the provider.'
-      - name: primary_specialty_description
-        description: 'The primary specialty description of the provider.'
-      - name: provider_first_name
-        description: 'The first name of the provider.'
-      - name: provider_last_name
-        description: 'The last name of the provider.'
-      - name: provider_credential
-        description: 'The credential of the provider.'
-      - name: provider_organization_name
-        description: 'The organization name of the provider.'
-      - name: provider_other_organization_name
-        description: 'Other organization name of the provider (for Type 2 NPI).'
-      - name: provider_other_organization_name_type_code
-        description: 'The type code for the other organization name of the provider.'
-      - name: provider_other_organization_name_type_description
-        description: 'The type description for the other organization name of the provider.'
-      - name: parent_organization_name
-        description: 'The parent organization name of the provider.'
-      - name: practice_address_line_1
-        description: 'The first line of the practice address.'
-      - name: practice_address_line_2
-        description: 'The second line of the practice address.'
-      - name: practice_city
-        description: 'The city of the practice address.'
-      - name: practice_state
-        description: 'The state of the practice address.'
-      - name: practice_zip_code
-        description: 'The ZIP code of the practice address.'
-      - name: mailing_telephone_number
-        description: 'Provider Business Mailing Address Telephone Number.'
-      - name: location_telephone_number
-        description: 'Provider Business Practice Location Address Telephone Number.'
-      - name: official_telephone_number
-        description: 'Authorized Official Telephone Number'
-      - name: last_updated
-        description: 'The date when the provider information was last updated.'
-      - name: deactivation_date
-        description: 'The date when the provider was deactivated.'
-      - name: deactivation_flag
-        description: 'Flag indicating if the provider is deactivated.'
-
   - name: terminology__race
-    description: 'Seed containing race codes and descriptions.'
+    description: |-
+      Race values standardize patient race reporting in Tuva Core. They are maintained by Tuva Health.
+      Tuva uses these values as the expected normalized race vocabulary for eligibility, patient, and data
+      quality logic; current models carry the value through without joining to this terminology table.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__race.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: race
@@ -1103,8 +1218,13 @@ seeds:
         description: 'A description of the race.'
 
   - name: terminology__revenue_center
-    description: 'Seed containing revenue center codes and descriptions.'
+    description: |-
+      Revenue center codes identify accommodation, ancillary, and service departments on institutional
+      claim lines. Tuva sources this terminology from ResDAC variable documentation for Medicare claims
+      data. Tuva uses this asset in input normalization models, claims preprocessing service category and
+      encounter grouping models, and data quality checks.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__revenue_center.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: revenue_center
@@ -1123,18 +1243,21 @@ seeds:
       - name: revenue_center_description
         description: 'A description of the revenue center.'
 
-  - name: terminology__rxnorm_to_atc
-    description: 'This file maps ATC classes to RxCUI. The file is maintained by [CodeRX](https://coderx.io/) in partnership with Tuva Health.'
+  - name: terminology__coderx_classes
+    description: |-
+      CodeRx Open class records map RxNorm drug concepts to Anatomical Therapeutic Chemical classification
+      levels. Tuva distributes this annual open snapshot for medication enrichment and analytics.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__coderx_classes.csv.gz') }}"
       schema: |
-        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: rxnorm_to_atc
+        {%- if var('tuva_schema_prefix', None) != None -%}{{ var('tuva_schema_prefix') }}_terminology{% else %}terminology{%- endif -%}
+      alias: coderx_classes
       tags:
         - terminology
       column_types:
-        rxcui: |
+        drug_id: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        rxnorm_description: |
+        drug_name: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
         atc_1_code: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
@@ -1153,31 +1276,40 @@ seeds:
         atc_4_name: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
     columns:
-      - name: rxcui
-        description: 'The RxNorm code.'
-      - name: rxnorm_description
-        description: 'Description of the RxNorm concept.'
+      - name: drug_id
+        description: RxNorm RxCUI for the classified drug.
+        tests:
+          - not_null
+      - name: drug_name
+        description: RxNorm name for the classified drug.
       - name: atc_1_code
-        description: 'The ATC level 1 code.'
+        description: The ATC level 1 code.
       - name: atc_1_name
-        description: 'The name of the ATC level 1 code.'
+        description: The name of the ATC level 1 code.
       - name: atc_2_code
-        description: 'The ATC level 2 code.'
+        description: The ATC level 2 code.
       - name: atc_2_name
-        description: 'The name of the ATC level 2 code.'
+        description: The name of the ATC level 2 code.
       - name: atc_3_code
-        description: 'The ATC level 3 code.'
+        description: The ATC level 3 code.
       - name: atc_3_name
-        description: 'The name of the ATC level 3 code.'
+        description: The name of the ATC level 3 code.
       - name: atc_4_code
-        description: 'The ATC level 4 code.'
+        description: The ATC level 4 code.
       - name: atc_4_name
-        description: 'The name of the ATC level 4 code.'
+        description: The name of the ATC level 4 code.
 
 
   - name: terminology__snomed_icd_10_map
-    description: 'Seed containing mappings between SNOMED CT and ICD-10 codes.'
+    description: |-
+      The SNOMED CT to ICD-10-CM map links clinical concepts to diagnosis codes for condition mapping.
+      SNOMED International maintains SNOMED CT, and the National Library of Medicine distributes the
+      U.S. Edition and its mapping resources. The CMS HCC package uses this asset in suspecting models to
+      map SNOMED CT condition concepts to ICD-10-CM diagnosis codes. Tuva publishes the coordinated March
+      2026 map as a release snapshot and preserves the source active field rather than appending obsolete
+      relationship rows as though they were current.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__snomed_icd_10_map.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: snomed_icd_10_map
@@ -1198,7 +1330,7 @@ seeds:
         referenced_component_id: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         referenced_component_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(4096) {%- endif -%}
         map_group: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         map_priority: |
@@ -1252,8 +1384,20 @@ seeds:
         description: 'The name of the map category.'
 
   - name: terminology__snomed_ct
-    description: 'Seed containing SNOMED CT codes and descriptions.'
+    description: |-
+      SNOMED CT concepts identify clinical findings, disorders, procedures, body structures, organisms,
+      and other clinical meanings. SNOMED CT is maintained by SNOMED International, and the U.S. Edition
+      is distributed by the National Library of Medicine. Tuva uses this asset in the core lab result
+      model, the core observation model, core procedure models, core condition models, and logical data
+      quality checks. The March 2026 U.S. Edition is merged with every concept from the prior Tuva
+      snapshot so historical source codes continue to resolve. The description remains the current
+      fully specified name (FSN), preserving the public column's established semantics.
     config:
+      meta:
+        primary_key_columns:
+          - snomed_ct
+        primary_key_strategy: natural_single_column
+      post_hook: "{{ load_versioned_seed('terminology','terminology__snomed_ct.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: snomed_ct
@@ -1263,27 +1407,43 @@ seeds:
         snomed_ct: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(4096) {%- endif -%}
         is_active: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         created: date
         last_updated: date
+        deprecated: integer
     columns:
       - name: snomed_ct
         description: 'The SNOMED CT code.'
       - name: description
-        description: 'The description of the SNOMED CT code.'
+        description: 'The active fully specified name (FSN) when available, otherwise the latest inactive FSN from the March 2026 U.S. Edition; prior-only concepts retain their previously published description.'
       - name: is_active
         description: 'Indicates if the SNOMED CT code is active.'
       - name: created
         description: 'The date when the SNOMED CT code was created.'
       - name: last_updated
         description: 'The date when the SNOMED CT code was last updated.'
+      - name: deprecated
+        description: 'Indicates whether the concept is inactive in the March 2026 U.S. Edition or retained only from the prior Tuva snapshot (1), rather than active in March 2026 (0).'
 
 
   - name: terminology__snomed_ct_transitive_closures
-    description: 'Seed containing SNOMED CT transitive closures.'
+    description: |-
+      SNOMED CT transitive closures expand the concept hierarchy so descendants and ancestors can be
+      queried directly. SNOMED International maintains SNOMED CT, and the National Library of Medicine
+      distributes the U.S. Edition and its transitive closure resources. Tuva publishes the coordinated
+      March 2026 closure snapshot for user-led SNOMED CT hierarchy analysis and downstream clinical
+      concept expansion; current Tuva Core models do not join to it directly. The relation is reflexive:
+      every retained concept has one self-edge in addition to the current official ancestor edges. Prior
+      non-reflexive hierarchy edges are not appended to the current relationship snapshot.
     config:
+      meta:
+        primary_key_columns:
+          - parent_snomed_code
+          - child_snomed_code
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_seed('terminology','terminology__snomed_ct_transitive_closures.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: snomed_ct_transitive_closures
@@ -1293,11 +1453,11 @@ seeds:
         parent_snomed_code: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         parent_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(4096) {%- endif -%}
         child_snomed_code: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         child_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(4096) {%- endif -%}
     columns:
       - name: parent_snomed_code
         description: 'The SNOMED code of the parent concept.'
@@ -1309,65 +1469,58 @@ seeds:
         description: 'The description of the child SNOMED concept.'
 
 
-  - name: terminology__rxnorm_brand_generic
+  - name: terminology__coderx_drugs
+    description: |-
+      CodeRx Open drug records describe active, prescribable RxNorm concepts and their corresponding
+      unbranded clinical drug concepts. Tuva distributes this annual open snapshot for medication enrichment.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__coderx_drugs.csv.gz') }}"
       schema: |
         {%- if var('tuva_schema_prefix', None) != None -%}{{ var('tuva_schema_prefix') }}_terminology{% else %}terminology{%- endif -%}
-      alias: rxnorm_brand_generic
+      alias: coderx_drugs
       tags:
         - terminology
       column_types:
-        product_rxcui: |
+        drug_id: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        product_name: |
+        drug_name: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
-        product_tty: |
+        is_brand: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(10) {%- endif -%}
+        clinical_drug_id: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        prescribable_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
-        brand_vs_generic: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        brand_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(1000) {%- endif -%}
-        clinical_product_rxcui: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        clinical_product_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
-        clinical_product_tty: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        ingredient_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
-        dose_form_name: |
+        clinical_drug_name: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3000) {%- endif -%}
         active: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(10) {%- endif -%}
         prescribable: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(10) {%- endif -%}
-
-  - name: terminology__ccs_services_procedures
-    config:
-      schema: |
-        {%- if var('tuva_schema_prefix', None) != None -%}{{ var('tuva_schema_prefix') }}_terminology{% else %}terminology{%- endif -%}
-      alias: ccs_services_procedures
-      tags:
-        - terminology
-      column_types:
-        hcpcs_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(5) {%- endif -%}
-        ccs_category: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(3) {%- endif -%}
-        ccs_category_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        release_year: integer
-        start_valid_date: date
-        end_valid_date: date
-        code_range: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        source_file: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+    columns:
+      - name: drug_id
+        description: RxNorm RxCUI for the drug concept.
+        tests:
+          - not_null
+          - unique
+      - name: drug_name
+        description: RxNorm name for the drug concept.
+      - name: is_brand
+        description: Indicates whether the drug concept is branded.
+      - name: clinical_drug_id
+        description: RxNorm RxCUI for the corresponding unbranded clinical drug.
+      - name: clinical_drug_name
+        description: RxNorm name for the corresponding unbranded clinical drug.
+      - name: active
+        description: Indicates whether the CodeRx record is active.
+      - name: prescribable
+        description: Indicates whether the CodeRx record is prescribable.
 
   - name: terminology__nitos
+    description: |-
+      Neiman Imaging Types of Service categories map imaging HCPCS codes to modality, body region, focus
+      area, and invasiveness groups. They are maintained by the Harvey L. Neiman Health Policy Institute.
+      Tuva uses this asset in claims preprocessing service category and encounter grouping models.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__nitos.csv.gz') }}"
       schema: |
         {%- if var('tuva_schema_prefix', None) != None -%}{{ var('tuva_schema_prefix') }}_terminology{% else %}terminology{%- endif -%}
       alias: nitos
@@ -1389,11 +1542,12 @@ seeds:
         focus_area: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(50) {%- endif -%}
   - name: terminology__icd10_pcs_cms_ontology
-    description: |
-      A table containing the broken out elements of the ontology associated with ICD-10-PCS codes. These codes are a positional ontology, 
-      where each character in the code contains information about the procedure, depending on its position. CMS posts files containing these codes in XML format,
-      which can be tabularized using Python.
+    description: |-
+      The ICD-10-PCS CMS ontology decomposes procedure codes into their positional components, including
+      section, body system, root operation, body part, approach, device, and qualifier. It is maintained
+      by CMS. Tuva uses this asset in AHRQ CCSR models.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__icd10_pcs_cms_ontology.csv.gz') }}"
       schema: |
         {%- if var('tuva_schema_prefix', None) != None -%}{{ var('tuva_schema_prefix') }}_terminology{% else %}terminology{%- endif -%}
       alias: icd10_pcs_cms_ontology
@@ -1416,6 +1570,7 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
         qualifier: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
     columns:
       - name: icd10pcs_code
         description: ICD-10-PCS code
@@ -1433,90 +1588,17 @@ seeds:
         description: Device associated with the ICD-10-PCS code; corresponds to the sixth character of the code
       - name: qualifier
         description: Qualifier associated with the ICD-10-PCS code; corresponds to the seventh character of the code
-
-  - name: terminology__medicare_provider_and_supplier_taxonomy_crosswalk
-    description: |
-      A source for crosswalk CMS provider specialty codes with NPPES taxonomy codes. Source can be found here: 
-      https://data.cms.gov/provider-characteristics/medicare-provider-supplier-enrollment/medicare-provider-and-supplier-taxonomy-crosswalk/data
-    config:
-      schema: |
-        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: medicare_provider_and_supplier_taxonomy_crosswalk
-      tags:
-        - terminology
-      column_types:
-        medicare_specialty_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(16) {%- endif -%}
-        medicare_provider_supplier_type_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        provider_taxonomy_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(32) {%- endif -%}
-        provider_taxonomy_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(512) {%- endif -%}
-
-  - name: terminology__electing_teaching_hospital_list
-    description: |
-      CMS electing teaching hospitals. Source can be found here: https://www.cms.gov/priorities/key-initiatives/open-payments/resources/reporting-entitities
-    config:
-      schema: |
-        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: electing_teaching_hospital_list
-      tags:
-        - terminology
-      column_types:
-        collection_year: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(4) {%- endif -%}
-        ccn: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(6) {%- endif -%}
-        tin: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(9) {%- endif -%}
-        hospital_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        pecos_legal_business_name: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        street_address: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        po_box: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        city: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        state: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        zip_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        street_address_1: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        street_address_2: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        city_2: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        state_2: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-        zip_code_2: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
-
-  - name: terminology__cms_acceptable_provider_specialty_codes
-    description: |
-      A list of acceptable provider specialty codes for risk adjustment. Source can be found here: https://www.cms.gov/medicare/payment/medicare-advantage-rates-statistics/risk-adjustment/acceptable-physician-specialty-type-lists
-    config:
-      schema: |
-        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: cms_acceptable_provider_specialty_codes
-      tags:
-        - terminology
-      column_types:
-        specialty_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(8) {%- endif -%} 
-        specialty_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%} 
-        pecos_specialty_description: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%} 
+      - name: deprecated
+        description: Indicates whether the ICD-10-PCS code is absent from FY 2027 (1) or current in FY 2027 (0).
 
   - name: terminology__ssa_fips_state_county_crosswalk
-    description: |
-      SSA to FIPS State county crosswalk from the National Bureau of Economic Research.
-      Source can be found here: https://www.nber.org/research/data/ssa-federal-information-processing-series-fips-state-and-county-crosswalk
+    description: |-
+      The SSA-FIPS state and county crosswalk maps Social Security Administration county codes to FIPS
+      county identifiers for Medicare geographic analytics. It is maintained by the National Bureau of
+      Economic Research from federal reference data. Tuva publishes this asset for Medicare geographic
+      enrichment and user-led SSA-to-FIPS crosswalks; current Tuva Core models do not join to it directly.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__ssa_fips_state_county_crosswalk.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
       alias: ssa_fips_state_county_crosswalk
@@ -1539,36 +1621,1170 @@ seeds:
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(64) {%- endif -%} 
         countyname_rate: |
           {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(128) {%- endif -%} 
+    columns:
+      - name: fipscounty
+        description: 'Five-character Federal Information Processing Standards (FIPS) state and county code when available, preserving leading zeros.'
+      - name: countyname_fips
+        description: 'County or county-equivalent name associated with the FIPS code when available.'
+      - name: state
+        description: 'Two-character U.S. postal abbreviation supplied by the source when available.'
+      - name: cbsa_code
+        description: 'Five-character Core-Based Statistical Area (CBSA) code assigned by CMS; null when the county is not assigned to a CBSA.'
+      - name: cbsa_name
+        description: 'Name of the Core-Based Statistical Area associated with the CBSA code; null when the county is not assigned to a CBSA.'
+      - name: ssa_code
+        description: 'Five-character Social Security Administration state and county code from the Medicare Advantage Ratebook when available, preserving leading zeros.'
+      - name: state_name
+        description: 'State or territory name from the Medicare Advantage Ratebook when available.'
+      - name: countyname_rate
+        description: 'County name from the Medicare Advantage Ratebook associated with the SSA code when available.'
 
-  - name: terminology__provider_taxonomy_unpivot
-    description: |
-      Provider taxonomy codes from NPPES.
+  - name: terminology__ansi_fips_state
+    description: |-
+      ANSI FIPS state records standardize state FIPS codes, abbreviations, and names for geography
+      normalization. They are maintained by the U.S. Census Bureau and ANSI/INCITS. Tuva uses this asset
+      in input normalization models.
     config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__ansi_fips_state.csv.gz') }}"
       schema: |
         {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
-      alias: provider_taxonomy_unpivot
+      alias: ansi_fips_state
+      tags:
+        - terminology
+        - medicare_cclf_connector
+      column_types:
+        ansi_fips_state_code : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        ansi_fips_state_abbreviation : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        ansi_fips_state_name : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+    columns:
+      - name: ansi_fips_state_code
+        description: 'The unique ANSI FIPS state code.'
+      - name: ansi_fips_state_abbreviation
+        description: 'The abbreviation of the ANSI FIPS state.'
+      - name: ansi_fips_state_name
+        description: 'The full name of the ANSI FIPS state.'
+
+  - name: terminology__calendar
+    description: |-
+      The calendar table is a public daily reference asset with common date attributes maintained by Tuva Health. Tuva Core preserves it for compatible downstream use, including the Semantic Layer, CMS HCC, and AHRQ Quality Indicators. Core normalization, member-month construction, and provider attribution do not use calendar membership to validate or erase already-typed dates; member-month processing uses a separate package-owned monthly spine.
+    config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__calendar.csv.gz') }}"
+      schema: |
+        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
+      alias: calendar
       tags:
         - terminology
       column_types:
-        npi: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(10) {%- endif -%} 
-        taxonomy_col: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%} 
-        taxonomy_code: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%} 
-        switch_col: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%} 
-        taxonomy_switch: |
-          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%} 
+        full_date: date
+        year: integer
+        month: integer
+        day: integer
+        month_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        day_of_week_number: integer
+        day_of_week_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        week_of_year: integer
+        day_of_year: integer
+        year_month: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        first_day_of_month: date
+        last_day_of_month: date
+        year_month_int: integer
+
+    columns:
+      - name: full_date
+        description: 'The complete date.'
+      - name: year
+        description: 'The year part of the date.'
+      - name: month
+        description: 'The month part of the date.'
+      - name: day
+        description: 'The day part of the date.'
+      - name: month_name
+        description: 'The name of the month.'
+      - name: day_of_week_number
+        description: 'The number of the day in the week.'
+      - name: day_of_week_name
+        description: 'The name of the day in the week.'
+      - name: week_of_year
+        description: 'The week number in the year.'
+      - name: day_of_year
+        description: 'The day number in the year.'
+      - name: year_month
+        description: 'The year and month in YYYY-MM format.'
+      - name: first_day_of_month
+        description: 'The first day of the month.'
+      - name: last_day_of_month
+        description: 'The last day of the month.'
+
+  - name: terminology__code_type
+    description: |-
+      Code type values identify coding systems used across Tuva Core, such as ICD-10-CM, ICD-10-PCS,
+      HCPCS, NDC, LOINC, and SNOMED CT. They are maintained by Tuva Health. Tuva uses these values as the
+      expected vocabulary for code_type fields across input, core, and downstream models; current models
+      carry the value through without joining to this reference table.
+    config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__code_type.csv.gz') }}"
+      schema: |
+        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
+      alias: code_type
+      tags:
+        - terminology
+        - data_profiling
+      column_types:
+        code_type : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+    columns:
+      - name: code_type
+        description: 'The type of the code.'
+
+  - name: terminology__fips_county
+    description: |-
+      FIPS county records standardize county codes and names for geographic enrichment. They are
+      maintained by the U.S. Census Bureau. Tuva publishes this asset for county-level geographic
+      enrichment and user-led population health analytics; current Tuva Core models do not join to it
+      directly.
+    config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__fips_county.csv.gz') }}"
+      schema: |
+        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
+      alias: fips_county
+      tags:
+        - terminology
+      column_types:
+        fips_code : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        county : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        state : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        deprecated: integer
+    columns:
+      - name: fips_code
+        description: 'The FIPS code for the county.'
+      - name: county
+        description: 'The name of the county.'
+      - name: state
+        description: 'The state where the county is located.'
+      - name: deprecated
+        description: 'Indicates whether the FIPS county code is absent from the 2025 TIGER/Line county layer (1) or current (0).'
+
+  - name: terminology__ssa_fips_state
+    description: |-
+      SSA-FIPS state records map Social Security Administration state codes to state names for Medicare
+      geographic normalization. They are maintained by Tuva Health from federal SSA and FIPS reference
+      data. Tuva publishes this asset for Medicare geographic normalization and user-led SSA state-code
+      crosswalks; current Tuva Core models do not join to it directly.
+    config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__ssa_fips_state.csv.gz') }}"
+      schema: |
+        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
+      alias: ssa_fips_state
+      tags:
+        - terminology
+      column_types:
+        ssa_fips_state_code : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        ssa_fips_state_name : |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+    columns:
+      - name: ssa_fips_state_code
+        description: 'The SSA FIPS state code.'
+      - name: ssa_fips_state_name
+        description: 'The name of the SSA FIPS state.'
+
+  - name: terminology__svi_us_county
+    description: |-
+      County-level Social Vulnerability Index records measure social risk factors used for geography-based
+      population health analytics. They are maintained by CDC/ATSDR. Tuva publishes this asset for
+      county-level social vulnerability enrichment and population health analytics; current Tuva Core
+      models do not join to it directly.
+    config:
       meta:
-        columns:
-          - name: npi
-            description: 'The National Provider Identifier (NPI).'
-          - name: taxonomy_col
-            description: 'The taxonomy column identifier.'
-          - name: taxonomy_code
-            description: 'The provider taxonomy code.'
-          - name: switch_col
-            description: 'The switch column identifier.'
-          - name: taxonomy_switch
-            description: 'The taxonomy switch value.'
+        primary_key_columns:
+          - FIPS
+          - YEAR
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_seed('terminology','terminology__svi_us_county.csv.gz') }}"
+      schema: |-
+        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
+      alias: svi_us_county
+      tags:
+        - terminology
+      column_types:
+        ST: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        STATE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        ST_ABBR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        STCNTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        COUNTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        FIPS: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        LOCATION: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        AREA_SQMI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_TOTPOP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_TOTPOP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HU: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HU: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME1: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME1: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME2: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME2: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME3: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME3: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME4: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME4: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEMES: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEMES: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME1: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME2: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME3: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME4: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_TOTAL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_DAYPOP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        YEAR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+    columns:
+      - name: ST
+      - name: STATE
+      - name: ST_ABBR
+      - name: STCNTY
+      - name: COUNTY
+      - name: FIPS
+      - name: LOCATION
+      - name: AREA_SQMI
+      - name: E_TOTPOP
+      - name: M_TOTPOP
+      - name: E_HU
+      - name: M_HU
+      - name: E_HH
+      - name: M_HH
+      - name: E_POV150
+      - name: M_POV150
+      - name: E_UNEMP
+      - name: M_UNEMP
+      - name: E_HBURD
+      - name: M_HBURD
+      - name: E_NOHSDP
+      - name: M_NOHSDP
+      - name: E_UNINSUR
+      - name: M_UNINSUR
+      - name: E_AGE65
+      - name: M_AGE65
+      - name: E_AGE17
+      - name: M_AGE17
+      - name: E_DISABL
+      - name: M_DISABL
+      - name: E_SNGPNT
+      - name: M_SNGPNT
+      - name: E_LIMENG
+      - name: M_LIMENG
+      - name: E_MINRTY
+      - name: M_MINRTY
+      - name: E_MUNIT
+      - name: M_MUNIT
+      - name: E_MOBILE
+      - name: M_MOBILE
+      - name: E_CROWD
+      - name: M_CROWD
+      - name: E_NOVEH
+      - name: M_NOVEH
+      - name: E_GROUPQ
+      - name: M_GROUPQ
+      - name: EP_POV150
+      - name: MP_POV150
+      - name: EP_UNEMP
+      - name: MP_UNEMP
+      - name: EP_HBURD
+      - name: MP_HBURD
+      - name: EP_NOHSDP
+      - name: MP_NOHSDP
+      - name: EP_UNINSUR
+      - name: MP_UNINSUR
+      - name: EP_AGE65
+      - name: MP_AGE65
+      - name: EP_AGE17
+      - name: MP_AGE17
+      - name: EP_DISABL
+      - name: MP_DISABL
+      - name: EP_SNGPNT
+      - name: MP_SNGPNT
+      - name: EP_LIMENG
+      - name: MP_LIMENG
+      - name: EP_MINRTY
+      - name: MP_MINRTY
+      - name: EP_MUNIT
+      - name: MP_MUNIT
+      - name: EP_MOBILE
+      - name: MP_MOBILE
+      - name: EP_CROWD
+      - name: MP_CROWD
+      - name: EP_NOVEH
+      - name: MP_NOVEH
+      - name: EP_GROUPQ
+      - name: MP_GROUPQ
+      - name: EPL_POV150
+      - name: EPL_UNEMP
+      - name: EPL_HBURD
+      - name: EPL_NOHSDP
+      - name: EPL_UNINSUR
+      - name: SPL_THEME1
+      - name: RPL_THEME1
+      - name: EPL_AGE65
+      - name: EPL_AGE17
+      - name: EPL_DISABL
+      - name: EPL_SNGPNT
+      - name: EPL_LIMENG
+      - name: SPL_THEME2
+      - name: RPL_THEME2
+      - name: EPL_MINRTY
+      - name: SPL_THEME3
+      - name: RPL_THEME3
+      - name: EPL_MUNIT
+      - name: EPL_MOBILE
+      - name: EPL_CROWD
+      - name: EPL_NOVEH
+      - name: EPL_GROUPQ
+      - name: SPL_THEME4
+      - name: RPL_THEME4
+      - name: SPL_THEMES
+      - name: RPL_THEMES
+      - name: F_POV150
+      - name: F_UNEMP
+      - name: F_HBURD
+      - name: F_NOHSDP
+      - name: F_UNINSUR
+      - name: F_THEME1
+      - name: F_AGE65
+      - name: F_AGE17
+      - name: F_DISABL
+      - name: F_SNGPNT
+      - name: F_LIMENG
+      - name: F_THEME2
+      - name: F_MINRTY
+      - name: F_THEME3
+      - name: F_MUNIT
+      - name: F_MOBILE
+      - name: F_CROWD
+      - name: F_NOVEH
+      - name: F_GROUPQ
+      - name: F_THEME4
+      - name: F_TOTAL
+      - name: E_DAYPOP
+      - name: E_NOINT
+      - name: M_NOINT
+      - name: E_AFAM
+      - name: M_AFAM
+      - name: E_HISP
+      - name: M_HISP
+      - name: E_ASIAN
+      - name: M_ASIAN
+      - name: E_AIAN
+      - name: M_AIAN
+      - name: E_NHPI
+      - name: M_NHPI
+      - name: E_TWOMORE
+      - name: M_TWOMORE
+      - name: E_OTHERRACE
+      - name: M_OTHERRACE
+      - name: EP_NOINT
+      - name: MP_NOINT
+      - name: EP_AFAM
+      - name: MP_AFAM
+      - name: EP_HISP
+      - name: MP_HISP
+      - name: EP_ASIAN
+      - name: MP_ASIAN
+      - name: EP_AIAN
+      - name: MP_AIAN
+      - name: EP_NHPI
+      - name: MP_NHPI
+      - name: EP_TWOMORE
+      - name: MP_TWOMORE
+      - name: EP_OTHERRACE
+      - name: MP_OTHERRACE
+      - name: YEAR
+
+
+  - name: terminology__svi_us
+    description: |-
+      Tract-level Social Vulnerability Index records measure social risk factors used for geography-based
+      population health analytics. They are maintained by CDC/ATSDR. Tuva publishes this asset for
+      tract-level social vulnerability enrichment and population health analytics; current Tuva Core
+      models do not join to it directly.
+    config:
+      post_hook: "{{ load_versioned_seed('terminology','terminology__svi_us.csv.gz') }}"
+      schema: |-
+        {%- if  var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_terminology{% else %}terminology{%- endif -%}
+      alias: svi_us
+      tags:
+        - terminology
+      column_types:
+        ST: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        STATE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        ST_ABBR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        STCNTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        COUNTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        FIPS: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        LOCATION: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        AREA_SQMI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_TOTPOP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_TOTPOP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HU: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HU: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME1: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME1: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME2: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME2: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME3: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME3: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EPL_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEME4: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEME4: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        SPL_THEMES: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        RPL_THEMES: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_POV150: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_UNEMP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_HBURD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_NOHSDP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_UNINSUR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME1: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_AGE65: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_AGE17: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_DISABL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_SNGPNT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_LIMENG: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME2: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_MINRTY: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME3: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_MUNIT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_MOBILE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_CROWD: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_NOVEH: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_GROUPQ: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_THEME4: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        F_TOTAL: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_DAYPOP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        E_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        M_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NOINT: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AFAM: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_HISP: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_ASIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_AIAN: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_NHPI: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_TWOMORE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        EP_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        MP_OTHERRACE: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+        YEAR: |-
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(256) {%- endif -%}
+    columns:
+      - name: ST
+      - name: STATE
+      - name: ST_ABBR
+      - name: STCNTY
+      - name: COUNTY
+      - name: FIPS
+      - name: LOCATION
+      - name: AREA_SQMI
+      - name: E_TOTPOP
+      - name: M_TOTPOP
+      - name: E_HU
+      - name: M_HU
+      - name: E_HH
+      - name: M_HH
+      - name: E_POV150
+      - name: M_POV150
+      - name: E_UNEMP
+      - name: M_UNEMP
+      - name: E_HBURD
+      - name: M_HBURD
+      - name: E_NOHSDP
+      - name: M_NOHSDP
+      - name: E_UNINSUR
+      - name: M_UNINSUR
+      - name: E_AGE65
+      - name: M_AGE65
+      - name: E_AGE17
+      - name: M_AGE17
+      - name: E_DISABL
+      - name: M_DISABL
+      - name: E_SNGPNT
+      - name: M_SNGPNT
+      - name: E_LIMENG
+      - name: M_LIMENG
+      - name: E_MINRTY
+      - name: M_MINRTY
+      - name: E_MUNIT
+      - name: M_MUNIT
+      - name: E_MOBILE
+      - name: M_MOBILE
+      - name: E_CROWD
+      - name: M_CROWD
+      - name: E_NOVEH
+      - name: M_NOVEH
+      - name: E_GROUPQ
+      - name: M_GROUPQ
+      - name: EP_POV150
+      - name: MP_POV150
+      - name: EP_UNEMP
+      - name: MP_UNEMP
+      - name: EP_HBURD
+      - name: MP_HBURD
+      - name: EP_NOHSDP
+      - name: MP_NOHSDP
+      - name: EP_UNINSUR
+      - name: MP_UNINSUR
+      - name: EP_AGE65
+      - name: MP_AGE65
+      - name: EP_AGE17
+      - name: MP_AGE17
+      - name: EP_DISABL
+      - name: MP_DISABL
+      - name: EP_SNGPNT
+      - name: MP_SNGPNT
+      - name: EP_LIMENG
+      - name: MP_LIMENG
+      - name: EP_MINRTY
+      - name: MP_MINRTY
+      - name: EP_MUNIT
+      - name: MP_MUNIT
+      - name: EP_MOBILE
+      - name: MP_MOBILE
+      - name: EP_CROWD
+      - name: MP_CROWD
+      - name: EP_NOVEH
+      - name: MP_NOVEH
+      - name: EP_GROUPQ
+      - name: MP_GROUPQ
+      - name: EPL_POV150
+      - name: EPL_UNEMP
+      - name: EPL_HBURD
+      - name: EPL_NOHSDP
+      - name: EPL_UNINSUR
+      - name: SPL_THEME1
+      - name: RPL_THEME1
+      - name: EPL_AGE65
+      - name: EPL_AGE17
+      - name: EPL_DISABL
+      - name: EPL_SNGPNT
+      - name: EPL_LIMENG
+      - name: SPL_THEME2
+      - name: RPL_THEME2
+      - name: EPL_MINRTY
+      - name: SPL_THEME3
+      - name: RPL_THEME3
+      - name: EPL_MUNIT
+      - name: EPL_MOBILE
+      - name: EPL_CROWD
+      - name: EPL_NOVEH
+      - name: EPL_GROUPQ
+      - name: SPL_THEME4
+      - name: RPL_THEME4
+      - name: SPL_THEMES
+      - name: RPL_THEMES
+      - name: F_POV150
+      - name: F_UNEMP
+      - name: F_HBURD
+      - name: F_NOHSDP
+      - name: F_UNINSUR
+      - name: F_THEME1
+      - name: F_AGE65
+      - name: F_AGE17
+      - name: F_DISABL
+      - name: F_SNGPNT
+      - name: F_LIMENG
+      - name: F_THEME2
+      - name: F_MINRTY
+      - name: F_THEME3
+      - name: F_MUNIT
+      - name: F_MOBILE
+      - name: F_CROWD
+      - name: F_NOVEH
+      - name: F_GROUPQ
+      - name: F_THEME4
+      - name: F_TOTAL
+      - name: E_DAYPOP
+      - name: E_NOINT
+      - name: M_NOINT
+      - name: E_AFAM
+      - name: M_AFAM
+      - name: E_HISP
+      - name: M_HISP
+      - name: E_ASIAN
+      - name: M_ASIAN
+      - name: E_AIAN
+      - name: M_AIAN
+      - name: E_NHPI
+      - name: M_NHPI
+      - name: E_TWOMORE
+      - name: M_TWOMORE
+      - name: E_OTHERRACE
+      - name: M_OTHERRACE
+      - name: EP_NOINT
+      - name: MP_NOINT
+      - name: EP_AFAM
+      - name: MP_AFAM
+      - name: EP_HISP
+      - name: MP_HISP
+      - name: EP_ASIAN
+      - name: MP_ASIAN
+      - name: EP_AIAN
+      - name: MP_AIAN
+      - name: EP_NHPI
+      - name: MP_NHPI
+      - name: EP_TWOMORE
+      - name: MP_TWOMORE
+      - name: EP_OTHERRACE
+      - name: MP_OTHERRACE
+      - name: YEAR

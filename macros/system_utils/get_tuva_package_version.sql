@@ -1,5 +1,4 @@
-{# This will get the version variable defined in the tuva project dbt_project.yml file #}
+{# dbt has no supported Jinja API for package metadata; contract tests keep this literal aligned with dbt_project.yml. #}
 {% macro get_tuva_package_version() %}
-  {% set conf = the_tuva_project.get_runtime_config() %}
-  {% do return(conf.dependencies["the_tuva_project"].version) %}
+  {% do return('1.0.0') %}
 {% endmacro %}

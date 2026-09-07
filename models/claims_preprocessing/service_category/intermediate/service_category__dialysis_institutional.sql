@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled', var('claims_enabled', var('tuva_marts_enabled', False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -14,6 +14,7 @@ select distinct
 from {{ ref('service_category__stg_medical_claim') }} as med
 inner join {{ ref('service_category__stg_outpatient_institutional') }} as outpatient
   on med.claim_id = outpatient.claim_id
+  and med.data_source = outpatient.data_source
 where
   substring(med.bill_type_code, 1, 2) in ('72')
   or med.primary_taxonomy_code in (

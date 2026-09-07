@@ -1,8 +1,7 @@
 default:
-  target: ci
+  target: dev
   outputs:
-    ci:
+    dev:
       type: duckdb
-      path: "{{ env_var('DBT_MOTHERDUCK_CI_PATH') }}"
-      threads: 4
-
+      path: "{{ env_var('TUVA_DUCKDB_PATH', '/tmp/tuva_core.duckdb') }}"
+      threads: 1

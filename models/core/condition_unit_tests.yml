@@ -1,0 +1,248 @@
+version: 2
+
+unit_tests:
+  - name: test_core_condition_grouper_assigns_at_most_one_active_target
+    description: >-
+      Proves that Core condition preserves one input row per condition record,
+      normalizes ICD-10-CM case and decimal formatting on both sides of the
+      grouper join, applies active mappings to retained historical codes and
+      nonbillable headings, and leaves unsupported code systems and inactive mappings ungrouped. A
+      deliberately ambiguous normalized active key is left ungrouped without
+      multiplying the Core row, while identical duplicate targets collapse to
+      one assignment.
+    model: core__condition
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    overrides:
+      vars:
+        claims_enabled: true
+        clinical_enabled: false
+    given:
+      - input: ref('int_condition_from_claims')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
+          {% set timestamp_type = 'datetime2(0)' if target.type in ['fabric', 'sqlserver'] else 'timestamp' %}
+          {# Keep this fixture flat: Fabric CTAS fails when dbt's unit-test wrapper creates a third nested CTE level. #}
+          {% set fixture_rows = [
+              ['condition-icd-10-cm', 'person-1', 'ICD-10-CM', 'e03.9']
+            , ['condition-snomed-ct', 'person-2', 'snomed-ct', '123456789']
+            , ['condition-unsupported', 'person-3', 'icd-9-cm', '2449']
+            , ['condition-ambiguous-map', 'person-4', 'icd-10-cm', 'R99.9']
+            , ['condition-identical-map-duplicates', 'person-5', 'icd-10-cm', 'J45.909']
+            , ['condition-historical-active-map', 'person-6', 'icd-10-cm', 's23.420a']
+            , ['condition-inactive-map', 'person-7', 'icd-10-cm', 'B00.0']
+            , ['condition-incomplete-map', 'person-8', 'icd-10-cm', 'M99.9']
+            , ['condition-nonbillable-heading', 'person-9', 'icd-10-cm', 'b37']
+          ] %}
+          {% for fixture_row in fixture_rows %}
+          select
+              '{{ fixture_row[0] }}' as condition_id
+            , cast(null as {{ string_type }}) as source_condition_id
+            , '{{ fixture_row[1] }}' as person_id
+            , cast(null as {{ string_type }}) as member_id
+            , cast(null as {{ string_type }}) as patient_id
+            , cast(null as {{ string_type }}) as encounter_id
+            , cast(null as {{ string_type }}) as claim_id
+            , cast(null as {{ string_type }}) as payer
+            , cast(null as date) as recorded_date
+            , cast(null as date) as onset_date
+            , cast(null as date) as resolved_date
+            , cast(null as {{ string_type }}) as status
+            , cast(null as {{ string_type }}) as condition_type
+            , '{{ fixture_row[2] }}' as code_system
+            , '{{ fixture_row[3] }}' as source_code
+            , cast(null as {{ string_type }}) as source_description
+            , '{{ fixture_row[3] }}' as normalized_code
+            , cast(null as {{ string_type }}) as normalized_description
+            , 1 as condition_rank
+            , cast(null as {{ string_type }}) as present_on_admit_code
+            , cast(null as {{ string_type }}) as present_on_admit_description
+            , cast(null as {{ timestamp_type }}) as ingest_datetime
+            , cast(null as {{ timestamp_type }}) as tuva_last_run
+            , 'source' as data_source
+          {% if not loop.last %}union all{% endif %}
+          {% endfor %}
+      - input: ref('tuva_condition_grouper_code_map')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
+          select 'icd-10-cm' as code_system, 'E039' as code, 'Endocrine & Metabolic Disease' as condition_family, 'Hypothyroidism' as condition_name, 'active' as status
+          union all select 'snomed-ct', '123456789', 'Respiratory Disease', 'Asthma', 'active'
+          union all select 'icd-10-cm', 'R999', 'Symptoms, Signs & Abnormal Findings', 'Abnormal Clinical or Laboratory Findings', 'active'
+          union all select 'ICD-10-CM', 'r99.9', 'Other', 'Other Specified and Unspecified Conditions', 'active'
+          union all select 'icd-10-cm', 'J45909', 'Respiratory Disease', 'Asthma', 'active'
+          union all select 'ICD-10-CM', 'j45.909', 'Respiratory Disease', 'Asthma', 'active'
+          union all select 'icd-10-cm', 'S23420A', 'Injury & Poisoning', 'Sprain and Strain', 'active'
+          union all select 'icd-10-cm', 'B000', 'Infectious Disease', 'Herpesvirus Infection', 'inactive'
+          union all select 'icd-10-cm', 'M999', 'Musculoskeletal Disease', cast(null as {{ string_type }}), 'active'
+          union all select 'icd-10-cm', 'B37', 'Infectious Disease', 'Fungal Infections', 'active'
+    expect:
+      rows:
+        - condition_id: condition-icd-10-cm
+          condition_family: Endocrine & Metabolic Disease
+          condition_name: Hypothyroidism
+        - condition_id: condition-snomed-ct
+          condition_family: Respiratory Disease
+          condition_name: Asthma
+        - condition_id: condition-unsupported
+          condition_family: null
+          condition_name: null
+        - condition_id: condition-ambiguous-map
+          condition_family: null
+          condition_name: null
+        - condition_id: condition-identical-map-duplicates
+          condition_family: Respiratory Disease
+          condition_name: Asthma
+        - condition_id: condition-historical-active-map
+          condition_family: Injury & Poisoning
+          condition_name: Sprain and Strain
+        - condition_id: condition-inactive-map
+          condition_family: null
+          condition_name: null
+        - condition_id: condition-incomplete-map
+          condition_family: null
+          condition_name: null
+        - condition_id: condition-nonbillable-heading
+          condition_family: Infectious Disease
+          condition_name: Fungal Infections
+
+  - name: test_claims_condition_stable_ids_and_semantics
+    description: >-
+      Proves that claims condition IDs preserve ordered parent values across
+      underscore, pipe, percent, null, empty-string, and literal-sentinel
+      boundaries. Claims rows must publish a null source_condition_id and
+      status and use billing_diagnosis as condition_type. Diagnoses from an
+      undetermined claim must survive without an encounter assignment.
+    model: int_condition_from_claims
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    overrides:
+      vars:
+        tuva_last_run: '2024-01-01 00:00:00'
+    given:
+      - input: ref('normalized__medical_claim_diagnoses')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          {% set timestamp_type = 'datetime2(0)' if target.type in ['fabric', 'sqlserver'] else 'timestamp' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
+          select 'mc-1' as medical_claim_id, 'c' as claim_id, 1 as claim_line_number, 'professional' as claim_type, 'person-1' as person_id, 'member-1' as member_id, 'payer' as payer, 'plan' as {{ plan_identifier }}, cast('2024-01-01' as date) as recorded_date, 1 as condition_rank, 'icd-10-cm' as code_system, 'A001' as source_code, 'A001' as normalized_code, 'Long description' as normalized_description, cast(null as {{ string_type }}) as present_on_admit_code, cast(null as {{ string_type }}) as present_on_admit_description, cast('2024-01-01 00:00:00' as {{ timestamp_type }}) as tuva_last_run, 'a_b' as data_source
+          union all
+          select 'mc-2', 'b_c', 1, 'professional', 'person-2', 'member-2', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'a'
+          union all
+          select 'mc-3', 'c', 1, 'professional', 'person-3', 'member-3', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'a|b'
+          union all
+          select 'mc-4', 'b|c', 1, 'professional', 'person-4', 'member-4', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'a'
+          union all
+          select 'mc-5', 'claim-null', 1, 'professional', 'person-5', 'member-5', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'source'
+          union all
+          select 'mc-6', 'claim-empty', 1, 'professional', 'person-6', 'member-6', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'source'
+          union all
+          select 'mc-7', 'claim-N', 1, 'professional', 'person-7', 'member-7', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'source'
+          union all
+          select 'mc-8', 'claim-sentinel', 1, 'professional', 'person-8', 'member-8', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'source'
+          union all
+          select 'mc-9', 'c', 1, 'professional', 'person-9', 'member-9', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'a%7Cb'
+          union all
+          select 'mc-10', 'claim-undetermined', 1, 'undetermined', 'person-10', 'member-10', 'payer', 'plan', cast('2024-01-01' as date), 1, 'icd-10-cm', 'A001', 'A001', 'Long description', null, null, cast('2024-01-01 00:00:00' as {{ timestamp_type }}), 'source'
+      - input: ref('encounters__combined_claim_line_crosswalk')
+        format: sql
+        rows: |
+          select 'c' as claim_id, 1 as claim_line_number, 'a_b' as data_source, 'enc' as encounter_id, 1 as claim_line_attribution_number
+          union all
+          select 'b_c', 1, 'a', 'enc', 1
+          union all
+          select 'c', 1, 'a|b', 'enc', 1
+          union all
+          select 'b|c', 1, 'a', 'enc', 1
+          union all
+          select 'claim-empty', 1, 'source', '', 1
+          union all
+          select 'claim-N', 1, 'source', 'N', 1
+          union all
+          select 'claim-sentinel', 1, 'source', '<NULL>', 1
+          union all
+          select 'c', 1, 'a%7Cb', 'enc', 1
+    expect:
+      rows:
+        - condition_id: 7fab3aacdcf1b74933250087b512eb58
+          source_condition_id: null
+          claim_id: c
+          encounter_id: enc
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: a_b
+        - condition_id: 690880fb325008d5362cb396504bd3d0
+          source_condition_id: null
+          claim_id: b_c
+          encounter_id: enc
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: a
+        - condition_id: 6bbdae4ba0832480044d215f6158a8c1
+          source_condition_id: null
+          claim_id: c
+          encounter_id: enc
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: a|b
+        - condition_id: 74cca3062fdd14ba98fcf6b543eb3412
+          source_condition_id: null
+          claim_id: b|c
+          encounter_id: enc
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: a
+        - condition_id: b965a7a7217834cff269dc01df5ceed2
+          source_condition_id: null
+          claim_id: claim-null
+          encounter_id: null
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: source
+        - condition_id: 13d5036ae468196cac7e80e37ea83e17
+          source_condition_id: null
+          claim_id: claim-empty
+          encounter_id: ''
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: source
+        - condition_id: d4e0607dfe480a36a9c06ff36820c1be
+          source_condition_id: null
+          claim_id: claim-N
+          encounter_id: N
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: source
+        - condition_id: 9a7b640cfddad091e1e86792d5bdf71b
+          source_condition_id: null
+          claim_id: claim-sentinel
+          encounter_id: <NULL>
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: source
+        - condition_id: c521c3a2de4e5bdda9fc2af49ad1d08d
+          source_condition_id: null
+          claim_id: c
+          encounter_id: enc
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: a%7Cb
+        - condition_id: 5c72213e34dd68ff47e649dff032e27a
+          source_condition_id: null
+          claim_id: claim-undetermined
+          encounter_id: null
+          condition_rank: 1
+          status: null
+          condition_type: billing_diagnosis
+          data_source: source

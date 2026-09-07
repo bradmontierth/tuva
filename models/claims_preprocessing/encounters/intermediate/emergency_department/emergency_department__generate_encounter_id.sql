@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled', var('claims_enabled', var('tuva_marts_enabled', False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -10,14 +10,13 @@ select
   , start_date
   , end_date
   , discharge_disposition_code
-  , facility_id
-  , row_number() over (partition by encounter_id
+  , facility_npi
+  , row_number() over (partition by patient_data_source_id, encounter_id
 order by start_date, end_date, claim_id) as encounter_claim_number
-  , row_number() over (partition by encounter_id
+  , row_number() over (partition by patient_data_source_id, encounter_id
 order by start_date desc, end_date desc, claim_id desc) as encounter_claim_number_desc
   , close_flag
   , min_closing_row
-  , dense_rank() over (
-order by encounter_id) as encounter_id
+  , {{ the_tuva_project.encounter_id_hash(["'emergency department'", 'patient_data_source_id', 'encounter_id']) }} as encounter_id
   , encounter_id as original_anchor_claim
 from {{ ref('emergency_department__generate_encounter_id_pre_sort') }}

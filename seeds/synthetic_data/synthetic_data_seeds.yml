@@ -1,0 +1,1076 @@
+version: 2
+
+seeds:
+  - name: synthetic_data__appointment
+    description: |-
+      Synthetic appointment records provide non-PHI clinical scheduling data for local development, demos,
+      documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - appointment_id
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__appointment') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: appointment
+      tags:
+        - synthetic_data
+        - clinical
+      enabled: true
+      column_types:
+        appointment_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        patient_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        encounter_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        start_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        end_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        duration: integer
+        location_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        practitioner_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        type_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        type_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        status_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        status_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        reason: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        cancellation_reason: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+
+  - name: synthetic_data__condition
+    description: |-
+      Synthetic condition records provide non-PHI Athena Health problem-list and diagnosis data for local
+      development, demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - source_condition_id
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__condition') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: condition
+      tags:
+        - synthetic_data
+        - clinical
+      enabled: true
+      column_types:
+        source_condition_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        patient_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        encounter_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        recorded_date: date
+        onset_date: date
+        resolved_date: date
+        status: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        condition_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        code_system: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        condition_rank: integer
+        present_on_admit_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+
+  - name: synthetic_data__encounter
+    description: |-
+      Synthetic encounter records provide non-PHI Athena Health clinical visit data for local development,
+      demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - encounter_id
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__encounter') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: encounter
+      tags:
+        - synthetic_data
+        - clinical
+      enabled: true
+      column_types:
+        encounter_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        patient_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        encounter_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        encounter_start_date: date
+        encounter_end_date: date
+        admit_source_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        admit_type_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        discharge_disposition_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        attending_provider_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        attending_provider_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        facility_npi: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        facility_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        primary_diagnosis_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        primary_diagnosis_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        drg_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        drg_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        paid_amount: |
+          {%- if target.type == "bigquery" -%} float64 {%- elif target.type == "databricks" -%} double {%- elif target.type == "fabric" -%} float {%- else -%} double precision {%- endif -%}
+        allowed_amount: |
+          {%- if target.type == "bigquery" -%} float64 {%- elif target.type == "databricks" -%} double {%- elif target.type == "fabric" -%} float {%- else -%} double precision {%- endif -%}
+        charge_amount: |
+          {%- if target.type == "bigquery" -%} float64 {%- elif target.type == "databricks" -%} double {%- elif target.type == "fabric" -%} float {%- else -%} double precision {%- endif -%}
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+
+  - name: synthetic_data__eligibility
+    description: |-
+      Synthetic eligibility records provide non-PHI insurance enrollment spans for local development, demos,
+      documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - person_id
+          - member_id
+          - enrollment_start_date
+          - enrollment_end_date
+          - payer
+          - plan
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__eligibility') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: eligibility
+      tags:
+        - synthetic_data
+        - claims
+      enabled: true
+      column_types:
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        member_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        subscriber_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        sex: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        race: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        birth_date: date
+        death_date: date
+        death_flag: integer
+        enrollment_start_date: date
+        enrollment_end_date: date
+        payer: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        plan: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        original_reason_entitlement_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        dual_status_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        medicare_status_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        group_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        group_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        name_suffix: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        first_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        middle_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        last_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        social_security_number: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        subscriber_relation: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        address: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        city: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        state: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        zip_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        phone: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        email: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ethnicity: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_date: date
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        enrollment_status: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        hospice_flag: integer
+        institutional_snp_flag: integer
+        medicaid_indicator: integer
+        long_term_institutional_flag: integer
+        part_d_raf_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        low_income_subsidy_indicator: integer
+        metal_level: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        csr_indicator: integer
+        enrollment_duration_months: integer
+        esrd_status: integer
+        transplant_duration_months: integer
+
+  - name: synthetic_data__immunization
+    description: |-
+      Synthetic immunization records provide non-PHI vaccine administration data for local development, demos,
+      documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - immunization_id
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__immunization') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: immunization
+      tags:
+        - synthetic_data
+        - clinical
+      enabled: true
+      column_types:
+        immunization_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        patient_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        encounter_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        status: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        status_reason: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        occurrence_date: date
+        source_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_dose: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_dose: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        lot_number: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        body_site: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        route: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        location_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        practitioner_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+
+  - name: synthetic_data__lab_result
+    description: |-
+      Synthetic lab result records provide non-PHI laboratory data for local development, demos,
+      documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - lab_result_id
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__lab_result') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: lab_result
+      tags:
+        - synthetic_data
+        - clinical
+      enabled: true
+      column_types:
+        lab_result_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        patient_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        encounter_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        accession_number: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_order_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_order_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_order_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_component_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_component_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_component_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_order_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_order_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_order_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_component_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_component_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_component_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        status: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        result: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        result_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        collection_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        source_units: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_units: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_reference_range_low: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_reference_range_high: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_reference_range_low: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_reference_range_high: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_abnormal_flag: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_abnormal_flag: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        specimen: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ordering_practitioner_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+
+  - name: synthetic_data__location
+    description: |-
+      Synthetic location records provide non-PHI Athena Health facility and clinic data for local development,
+      demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns: [location_id, data_source]
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__location') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: location
+      tags: [synthetic_data, clinical]
+      enabled: true
+      column_types:
+        location_id: &synthetic_string |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        npi: *synthetic_string
+        name: *synthetic_string
+        facility_type: *synthetic_string
+        parent_organization: *synthetic_string
+        address: *synthetic_string
+        city: *synthetic_string
+        state: *synthetic_string
+        zip_code: *synthetic_string
+        latitude: &synthetic_float |
+          {%- if target.type == "bigquery" -%} float64 {%- elif target.type == "databricks" -%} double {%- elif target.type == "fabric" -%} float {%- else -%} double precision {%- endif -%}
+        longitude: *synthetic_float
+        data_source: *synthetic_string
+
+  - name: synthetic_data__medication
+    description: |-
+      Synthetic medication records provide non-PHI Athena Health medication order and dispensing data for local
+      development, demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns: [medication_id, data_source]
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__medication') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: medication
+      tags: [synthetic_data, clinical]
+      enabled: true
+      column_types:
+        medication_id: *synthetic_string
+        person_id: *synthetic_string
+        patient_id: *synthetic_string
+        encounter_id: *synthetic_string
+        dispensing_date: date
+        prescribing_date: date
+        source_code_type: *synthetic_string
+        source_code: *synthetic_string
+        source_description: *synthetic_string
+        ndc_code: *synthetic_string
+        rxnorm_code: *synthetic_string
+        atc_code: *synthetic_string
+        route: *synthetic_string
+        strength: *synthetic_string
+        quantity: integer
+        quantity_unit: *synthetic_string
+        days_supply: integer
+        practitioner_id: *synthetic_string
+        ingest_datetime: &synthetic_datetime |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+        data_source: *synthetic_string
+
+  - name: synthetic_data__practitioner
+    description: |-
+      Synthetic practitioner records provide non-PHI Athena Health clinician data for local development, demos,
+      documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns: [practitioner_id, data_source]
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__practitioner') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: practitioner
+      tags: [synthetic_data, clinical]
+      enabled: true
+      column_types:
+        practitioner_id: *synthetic_string
+        npi: *synthetic_string
+        first_name: *synthetic_string
+        last_name: *synthetic_string
+        practice_affiliation: *synthetic_string
+        specialty: *synthetic_string
+        sub_specialty: *synthetic_string
+        data_source: *synthetic_string
+
+  - name: synthetic_data__procedure
+    description: |-
+      Synthetic procedure records provide non-PHI Athena Health clinical procedure data for local development,
+      demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns: [source_procedure_id, data_source]
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__procedure') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: procedure
+      tags: [synthetic_data, clinical]
+      enabled: true
+      column_types:
+        source_procedure_id: *synthetic_string
+        person_id: *synthetic_string
+        patient_id: *synthetic_string
+        encounter_id: *synthetic_string
+        procedure_date: date
+        code_system: *synthetic_string
+        source_code: *synthetic_string
+        source_description: *synthetic_string
+        modifier_1: *synthetic_string
+        modifier_2: *synthetic_string
+        modifier_3: *synthetic_string
+        modifier_4: *synthetic_string
+        modifier_5: *synthetic_string
+        practitioner_id: *synthetic_string
+        ingest_datetime: *synthetic_datetime
+        data_source: *synthetic_string
+
+  - name: synthetic_data__medical_claim
+    description: |-
+      Synthetic medical claim records provide non-PHI professional and institutional claim lines for local
+      development, demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - claim_id
+          - claim_line_number
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__medical_claim') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: medical_claim
+      tags:
+        - synthetic_data
+        - claims
+      enabled: true
+      column_types:
+        claim_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        claim_line_number: integer
+        claim_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        member_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        plan: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        claim_start_date: date
+        claim_end_date: date
+        claim_line_start_date: date
+        claim_line_end_date: date
+        admission_date: date
+        discharge_date: date
+        admit_source_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        admit_type_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        discharge_disposition_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        place_of_service_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        bill_type_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        drg_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        drg_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        revenue_center_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        service_unit_quantity: integer
+        hcpcs_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        hcpcs_modifier_1: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        hcpcs_modifier_2: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        hcpcs_modifier_3: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        hcpcs_modifier_4: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        hcpcs_modifier_5: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        rendering_npi: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        rendering_tin: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        billing_npi: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        billing_tin: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        facility_npi: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        paid_date: date
+        paid_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        allowed_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        charge_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        coinsurance_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        copayment_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        deductible_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        total_cost_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        diagnosis_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_1: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_2: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_3: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_4: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_5: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_6: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_7: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_8: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_9: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_10: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_11: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_12: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_13: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_14: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_15: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_16: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_17: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_18: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_19: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_20: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_21: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_22: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_23: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_24: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_code_25: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_1: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_2: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_3: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_4: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_5: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_6: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_7: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_8: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_9: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_10: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_11: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_12: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_13: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_14: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_15: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_16: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_17: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_18: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_19: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_20: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_21: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_22: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_23: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_24: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        diagnosis_poa_25: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_1: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_2: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_3: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_4: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_5: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_6: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_7: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_8: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_9: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_10: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_11: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_12: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_13: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_14: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_15: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_16: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_17: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_18: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_19: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_20: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_21: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_22: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_23: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_24: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_code_25: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        procedure_date_1: date
+        procedure_date_2: date
+        procedure_date_3: date
+        procedure_date_4: date
+        procedure_date_5: date
+        procedure_date_6: date
+        procedure_date_7: date
+        procedure_date_8: date
+        procedure_date_9: date
+        procedure_date_10: date
+        procedure_date_11: date
+        procedure_date_12: date
+        procedure_date_13: date
+        procedure_date_14: date
+        procedure_date_15: date
+        procedure_date_16: date
+        procedure_date_17: date
+        procedure_date_18: date
+        procedure_date_19: date
+        procedure_date_20: date
+        procedure_date_21: date
+        procedure_date_22: date
+        procedure_date_23: date
+        procedure_date_24: date
+        procedure_date_25: date
+        in_network_flag: integer
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_date: date
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+
+  - name: synthetic_data__observation
+    description: |-
+      Synthetic observation records provide non-PHI clinical observation data for local development, demos,
+      documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - observation_id
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__observation') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: observation
+      tags:
+        - synthetic_data
+        - clinical
+      enabled: true
+      column_types:
+        observation_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        patient_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        encounter_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        panel_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        observation_date: date
+        observation_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_code_type: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_description: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        result: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_units: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_units: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_reference_range_low: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        source_reference_range_high: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_reference_range_low: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        normalized_reference_range_high: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+
+  - name: synthetic_data__pharmacy_claim
+    description: |-
+      Synthetic pharmacy claim records provide non-PHI prescription claim lines for local development, demos,
+      documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - claim_id
+          - claim_line_number
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__pharmacy_claim') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: pharmacy_claim
+      tags:
+        - synthetic_data
+        - claims
+      enabled: true
+      column_types:
+        claim_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        claim_line_number: integer
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        member_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        plan: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        prescribing_provider_npi: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        dispensing_provider_npi: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        dispensing_date: date
+        ndc_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        quantity: integer
+        days_supply: integer
+        refills: integer
+        paid_date: date
+        paid_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        allowed_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        charge_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        coinsurance_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        copayment_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        deductible_amount: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        in_network_flag: integer
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_date: date
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+
+  - name: synthetic_data__patient
+    description: |-
+      Synthetic patient records provide non-PHI demographic and geographic patient data for local development,
+      demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - person_id
+          - patient_id
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__patient') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: patient
+      tags:
+        - synthetic_data
+        - clinical
+      enabled: true
+      column_types:
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        patient_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        name_suffix: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        first_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        middle_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        last_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        sex: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        race: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        birth_date: date
+        death_date: date
+        death_flag: integer
+        social_security_number: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        address: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        city: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        state: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        zip_code: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        county: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        latitude: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        longitude: |
+          {%- if target.type in ("athena", "databricks") -%} real {%- else -%} float {%- endif -%}
+        phone: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        email: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ethnicity: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}
+
+  - name: synthetic_data__provider_attribution
+    description: |-
+      Synthetic provider attribution records provide non-PHI member-month attribution data for local
+      development, demos, documentation, and integration testing. They are maintained by Tuva Health.
+    config:
+      meta:
+        primary_key_columns:
+          - person_id
+          - member_id
+          - year_month
+          - payer
+          - plan
+          - data_source
+        primary_key_strategy: natural_multi_column
+      post_hook: "{{ load_versioned_synthetic_seed('synthetic_data__provider_attribution') }}"
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_synthetic_data{% else %}synthetic_data{%- endif -%}
+      alias: provider_attribution
+      tags:
+        - synthetic_data
+        - provider_attribution
+      enabled: true
+      column_types:
+        person_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        member_id: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        year_month: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        plan: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        data_source: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer_attributed_provider: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer_attributed_provider_practice: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer_attributed_provider_organization: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        payer_attributed_provider_lob: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        custom_attributed_provider: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        custom_attributed_provider_practice: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        custom_attributed_provider_organization: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        custom_attributed_provider_lob: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        file_name: |
+          {%- if target.type in ("bigquery", "databricks") -%} string {%- else -%} varchar(255) {%- endif -%}
+        ingest_datetime: |
+          {%- if target.type in ("fabric") -%} datetime2(0) {%- elif target.type in ("athena", "databricks") -%} timestamp {%- else -%} datetime {%- endif -%}

@@ -1,0 +1,46 @@
+{{ config(
+     enabled = (the_tuva_project.tuva_boolean_var('data_quality_enabled', false)) and (the_tuva_project.tuva_boolean_var('clinical_enabled', false)),
+     schema = (
+       var('tuva_schema_prefix', None) ~ '_data_quality'
+       if var('tuva_schema_prefix', None) is not none
+       else 'data_quality'
+     ),
+     alias = 'practitioner_flags',
+     tags = ['data_quality', 'dq_logical'],
+     materialized = 'table'
+   )
+}}
+
+{% set string_type = dbt.type_string() %}
+
+with source_rows as (
+    select *
+    from {{ ref('input_layer__practitioner') }}
+),
+
+provider_rows as (
+    select distinct
+          npi
+        , entity_type_code
+    from {{ ref('provider_data__provider') }}
+),
+
+final as (
+    select
+          source_rows.practitioner_id
+        , source_rows.data_source
+        , {{ dq_logical_int_flag_sql("provider_rows.npi is null", "source_rows.npi is not null") }} as npi_invalid
+        , {{ dq_logical_int_flag_sql(
+              "cast(provider_rows.entity_type_code as " ~ string_type ~ ") != '1'",
+              "source_rows.npi is not null and provider_rows.npi is not null and provider_rows.entity_type_code is not null"
+          ) }} as npi_not_individual
+        , {{ dq_logical_ingest_datetime_range_flag_sql(
+              "source_rows.ingest_datetime"
+          ) }} as ingest_datetime_out_of_reasonable_range
+    from source_rows
+    left join provider_rows
+        on cast(source_rows.npi as {{ string_type }}) = cast(provider_rows.npi as {{ string_type }})
+)
+
+select *
+from final

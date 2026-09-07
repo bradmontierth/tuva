@@ -1,6 +1,6 @@
 {{ config(
-     enabled = (var('claims_enabled', var('tuva_marts_enabled', False)) | as_bool)
-            or (var('clinical_enabled', var('tuva_marts_enabled', False)) | as_bool)
+     enabled = (the_tuva_project.tuva_boolean_var('claims_enabled', false))
+            or (the_tuva_project.tuva_boolean_var('clinical_enabled', false))
    )
 }}
 
@@ -19,39 +19,53 @@
 {%- endset -%}
 
 {%- set tuva_metadata_columns -%}
-    , data_source
+    , ingest_datetime
     , tuva_last_run
+    , data_source
 {%- endset -%}
 
-{% if var('clinical_enabled', var('tuva_marts_enabled',False)) == true and var('claims_enabled', var('tuva_marts_enabled',False)) == true -%}
+{% if the_tuva_project.tuva_boolean_var('clinical_enabled', false) == true and the_tuva_project.tuva_boolean_var('claims_enabled', false) == true -%}
 
 {%- set tuva_extension_columns -%}
-    {{ select_extension_columns(ref('input_layer__location')) }}
+    {{ select_extension_columns(ref('normalized__location')) }}
 {%- endset -%}
 
 with loc as (
-    {{ smart_union([ref('core__stg_claims_location'), ref('core__stg_clinical_location')], source_index=none) }}
+    {{ smart_union([ref('core__stg_claims_location'), ref('normalized__location')], source_index='_record_source') }}
+),
+
+prioritized_locations as (
+    select
+          loc.*
+        , max(case when loc._record_source = 2 then 1 else 0 end) over (
+              partition by loc.location_id, loc.data_source
+          ) as _has_clinical_record
+    from loc
 )
 
 select
     {{ tuva_core_columns }}
     {{ tuva_extension_columns }}
     {{ tuva_metadata_columns }}
-from loc
+from prioritized_locations
+where _record_source = 2
+   or location_id is null
+   or data_source is null
+   or _has_clinical_record = 0
 
-{% elif var('clinical_enabled', var('tuva_marts_enabled',False)) == true -%}
+{% elif the_tuva_project.tuva_boolean_var('clinical_enabled', false) == true -%}
 
 {%- set tuva_extension_columns -%}
-    {{ select_extension_columns(ref('input_layer__location')) }}
+    {{ select_extension_columns(ref('normalized__location')) }}
 {%- endset -%}
 
 select
     {{ tuva_core_columns }}
     {{ tuva_extension_columns }}
     {{ tuva_metadata_columns }}
-from {{ ref('core__stg_clinical_location') }}
+from {{ ref('normalized__location') }}
 
-{% elif var('claims_enabled', var('tuva_marts_enabled',False)) == true -%}
+{% elif the_tuva_project.tuva_boolean_var('claims_enabled', false) == true -%}
 
 {%- set tuva_extension_columns -%}
 {# No extension columns — input_layer__location is clinical-only #}

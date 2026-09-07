@@ -1,6 +1,6 @@
 
 {{ config(
-     enabled = var('claims_enabled',var('tuva_marts_enabled',False)) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -60,7 +60,7 @@ select
   , cast(discharge_disposition_description as {{ dbt.type_string() }}) as discharge_disposition_description
   , cast(null as {{ dbt.type_string() }}) as attending_provider_id
   , cast(null as {{ dbt.type_string() }}) as attending_provider_name
-  , cast(facility_id as {{ dbt.type_string() }}) as facility_id
+  , cast(facility_npi as {{ dbt.type_string() }}) as facility_npi
   , cast(facility_name as {{ dbt.type_string() }}) as facility_name
   , cast(facility_type as {{ dbt.type_string() }}) as facility_type
   , cast(coalesce(observation_flag, 0) as {{ dbt.type_int() }}) as observation_flag
@@ -87,8 +87,9 @@ select
   , cast(inst_claim_count as {{ dbt.type_int() }}) as inst_claim_count
   , cast(prof_claim_count as {{ dbt.type_int() }}) as prof_claim_count
   , cast(_dbt_source_relation as {{ dbt.type_string() }}) as source_model
-  , cast(base.data_source as {{ dbt.type_string() }}) as data_source
   , cast('claim' as {{ dbt.type_string() }}) as encounter_source_type
+  , cast(null as {{ dbt.type_timestamp() }}) as ingest_datetime
   , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
+  , cast(base.data_source as {{ dbt.type_string() }}) as data_source
 from base
 inner join {{ ref('encounters__patient_data_source_id') }} as p on base.patient_data_source_id = p.patient_data_source_id

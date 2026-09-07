@@ -1,6 +1,5 @@
 {{ config(
-     enabled = var('clinical_enabled',var('tuva_marts_enabled',False))
- | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('clinical_enabled', false)
    )
 }}
 
@@ -15,9 +14,6 @@
     , source_code_type
     , source_code
     , source_description
-    , normalized_code_type
-    , normalized_code
-    , normalized_description
     , result
     , source_units
     , normalized_units
@@ -27,32 +23,18 @@
     , normalized_reference_range_high
 {%- endset -%}
 
-{# Uncomment the columns below to test extension columns passthrough feature #}
 {%- set tuva_extensions -%}
-    {# , observation_id as x_temp_observation_id #}
-    {# , observation_date as zzz_temp_observation_date #}
+    , 'observation' as x_tuva_test_extension
+    , 'observation' as ext_tuva_test_extension
 {%- endset -%}
 
 {%- set tuva_metadata -%}
-    , data_source
-    , file_name
     , ingest_datetime
+    , data_source
 {%- endset -%}
 
-{% if var('use_synthetic_data') == true -%}
-
 select
     {{ tuva_columns }}
     {{ tuva_extensions }}
     {{ tuva_metadata }}
-from {{ ref('observation_seed') }}
-
-{%- else -%}
-
-select
-    {{ tuva_columns }}
-    {{ tuva_extensions }}
-    {{ tuva_metadata }}
-from {{ source('source_input', 'observation') }}
-
-{%- endif %}
+from {{ ref('the_tuva_project', 'synthetic_data__observation') }}

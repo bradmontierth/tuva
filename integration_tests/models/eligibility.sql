@@ -1,6 +1,5 @@
 {{ config(
-     enabled = var('claims_enabled',var('tuva_marts_enabled',False))
- | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -8,31 +7,17 @@
       person_id
     , member_id
     , subscriber_id
-    , gender
-    , race
-    , birth_date
-    , death_date
-    , death_flag
+    , subscriber_relation
     , enrollment_start_date
     , enrollment_end_date
     , payer
     , payer_type
     , {{ the_tuva_project.quote_column('plan') }}
-    , original_reason_entitlement_code
-    , dual_status_code
-    , medicare_status_code
-    , enrollment_status
-    , hospice_flag
-    , institutional_snp_flag
-    , long_term_institutional_flag
-    , group_id
-    , group_name
-    , name_suffix
     , first_name
     , middle_name
     , last_name
+    , name_suffix
     , social_security_number
-    , subscriber_relation
     , address
     , city
     , state
@@ -40,36 +25,53 @@
     , phone
     , email
     , ethnicity
+    , sex
+    , race
+    , birth_date
+    , death_date
+    , death_flag
+    , original_reason_entitlement_code
+    , dual_status_code
+    , medicare_status_code
+    , enrollment_status
+    , hospice_flag
+    , institutional_snp_flag
+    , medicaid_indicator
+    , long_term_institutional_flag
+    , part_d_raf_type
+    , low_income_subsidy_indicator
+    , metal_level
+    , csr_indicator
+    , enrollment_duration_months
+    , esrd_status
+    , transplant_duration_months
+    , group_id
+    , group_name
 {%- endset -%}
 
-{# Uncomment the columns below to test extension columns passthrough feature #}
+{# Extension columns for testing passthrough to core.eligibility. #}
 {%- set tuva_extensions -%}
-    {# , person_id as x_temp_person_id #}
-    {# , first_name as x_temp_first_name #}
-    {# , payer_type as zzz_temp_payer_type #}
+    , {{ dbt.concat([
+        "'claims_'",
+        "cast(person_id as " ~ dbt.type_string() ~ ")"
+    ]) }} as x_temp_record_origin
+    , person_id as x_temp_person_id
+    , first_name as x_temp_first_name
+    , 'eligibility' as x_tuva_test_extension
+    , 'eligibility' as ext_tuva_test_extension
+    , 'extension-first-name' as x_first_name
+    , 'extension-first-name' as ext_first_name
 {%- endset -%}
 
 {%- set tuva_metadata -%}
-    , data_source
     , file_date
     , file_name
     , ingest_datetime
+    , data_source
 {%- endset -%}
 
-{% if var('use_synthetic_data') == true -%}
-
 select
     {{ tuva_columns }}
     {{ tuva_extensions }}
     {{ tuva_metadata }}
-from {{ ref('eligibility_seed') }}
-
-{%- else -%}
-
-select
-    {{ tuva_columns }}
-    {{ tuva_extensions }}
-    {{ tuva_metadata }}
-from {{ source('source_input', 'eligibility') }}
-
-{%- endif %}
+from {{ ref('the_tuva_project', 'synthetic_data__eligibility') }}

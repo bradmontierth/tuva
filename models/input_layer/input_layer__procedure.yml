@@ -1,565 +1,98 @@
 version: 2
 models:
   - name: input_layer__procedure
-    description: |
-      The procedure table contains information on procedures that were performed on patients in the dataset.
+    description: |-
+      The procedure table contains one record per procedure per data source. It stores clinical procedures performed for a patient, including the person, patient, encounter, procedure date, source procedure code, optional modifiers, and practitioner who performed or documented the procedure.
+
+      The source_procedure_id should identify a unique procedure record within a source system. Procedure codes should be mapped to code_system and source_code; Tuva derives normalized procedure fields downstream in core.procedure when the source code can be matched to supported terminology.
+
+      Primary key: source_procedure_id, data_source.
     config:
       schema: |
         {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_input_layer{% else %}input_layer{%- endif -%}
       tags: input_layer
       materialized: view
     columns:
-      - name: procedure_id
-        description: The unique identifier for the performed procedure.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: error
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_service_categories
-                  - dqi_ccsr
-                  - dqi_cms_chronic_conditions
-                  - dqi_tuva_chronic_conditions
-                  - dqi_cms_hccs
-                  - dqi_ed_classification
-                  - dqi_financial_pmpm
-                  - dqi_quality_measures
-                  - dqi_readmission
-          - unique:
-              config:
-                severity: error
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_service_categories
-                  - dqi_ccsr
-                  - dqi_cms_chronic_conditions
-                  - dqi_tuva_chronic_conditions
-                  - dqi_cms_hccs
-                  - dqi_ed_classification
-                  - dqi_financial_pmpm
-                  - dqi_quality_measures
-                  - dqi_readmission
-          - not_null:
-              config:
-                severity: error
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_service_categories
-                  - dqi_ccsr
-                  - dqi_cms_chronic_conditions
-                  - dqi_tuva_chronic_conditions
-                  - dqi_cms_hccs
-                  - dqi_ed_classification
-                  - dqi_financial_pmpm
-                  - dqi_quality_measures
-                  - dqi_readmission
+      - name: source_procedure_id
+        description: Source-system identifier for the procedure record. This value should be unique within a data source. Tuva uses this field to create the synthetic procedure_id in core.procedure.
         config:
           meta:
             data_type: varchar
             is_primary_key: true
       - name: person_id
-        description: Unique identifier for each person in the dataset.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_quality_measures
-                  - dqi_readmission
-          - not_null:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_2
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_quality_measures
-                  - dqi_readmission
+        description: Globally unique identifier for the person across the dataset.
         config:
           meta:
             data_type: varchar
       - name: patient_id
-        description: Identifier that links a patient to a particular clinical source system.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
+        description: Clinical source-system patient identifier, such as medical record number or MRN.
         config:
           meta:
             data_type: varchar
       - name: encounter_id
-        description: Unique identifier for each encounter in the dataset.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-                  - dqi_readmission
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
-                  - dqi_quality_measures
-                  - dqi_readmission
-        config:
-          meta:
-            data_type: varchar
-      - name: claim_id
-        description: Unique identifier for a claim. Each claim represents a distinct healthcare service or set of services provided to a patient.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
+        description: Source-system identifier for the clinical encounter associated with the procedure, when available.
         config:
           meta:
             data_type: varchar
       - name: procedure_date
-        description: Date when the procedure was performed.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_quality_measures
-          - the_tuva_project.expect_column_values_to_be_of_type:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_2
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_quality_measures
-              arguments:
-                column_type: date
-          - the_tuva_project.expect_column_values_to_be_between:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_4
-                  - dqi
-              arguments:
-                min_value: '''1900-01-01'''
-                max_value: '''2100-01-01'''
-                strictly: false
+        description: Date the procedure was performed or documented, formatted
+          as YYYY-MM-DD when serialized. Expose this field as a native SQL DATE.
         config:
           meta:
             data_type: date
-      - name: source_code_type
-        description: The type of code reported in the source system (e.g., ICD-10 code, NDC, lab, etc)
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-          - accepted_values:
-              config:
-                severity: warn
-                tags:
-                  - tuva_dqi_sev_2
-                  - dqi
-                  - dqi_cms_hccs
-                  - dqi_quality_measures
-              arguments:
-                values:
-                  - snomed-ct
-                  - hcpcs
-                  - icd-10-pcs
-                  - icd-9-pcs
+      - name: code_system
+        description: Source procedure code system. Expected values are snomed-ct, hcpcs, icd-10-pcs, or icd-9-pcs.
         config:
           meta:
             data_type: varchar
       - name: source_code
-        description: The code in the source system (e.g., the ICD-10 code, NDC, lab, etc)
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
-                  - dqi_quality_measures
+        description: Procedure code from the source system.
         config:
           meta:
             data_type: varchar
       - name: source_description
-        description: Description of the source code in the source system.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
-        config:
-          meta:
-            data_type: varchar
-      - name: normalized_code_type
-        description: The normalized type of code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_readmission
-          - relationships:
-              config:
-                severity: warn
-                enabled: '{{ ((target.type != ''bigquery'') and var(''enable_input_layer_testing'', true)) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_3
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_readmission
-              arguments:
-                to: ref('reference_data__code_type')
-                field: code_type
-        config:
-          meta:
-            data_type: varchar
-      - name: normalized_code
-        description: The normalized code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_readmission
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
-                  - dqi_cms_chronic_conditions
-                  - dqi_readmission
-        config:
-          meta:
-            data_type: varchar
-      - name: normalized_description
-        description: Normalized description of the code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
+        description: Source-system description of the procedure code.
         config:
           meta:
             data_type: varchar
       - name: modifier_1
-        description: First modifier for the procedure code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-          - relationships:
-              description: Procedure modifier should be a valid code set
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_4
-                  - dqi
-                  - dqi_quality_measures
-              arguments:
-                to: ref('terminology__hcpcs_level_2')
-                field: hcpcs
+        description: First procedure code modifier, when applicable.
         config:
           meta:
             data_type: varchar
       - name: modifier_2
-        description: Second modifier for the procedure code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-          - relationships:
-              description: Procedure modifier should be a valid code set
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_4
-                  - dqi
-                  - dqi_quality_measures
-              arguments:
-                to: ref('terminology__hcpcs_level_2')
-                field: hcpcs
+        description: Second procedure code modifier, when applicable.
         config:
           meta:
             data_type: varchar
       - name: modifier_3
-        description: Third modifier for the procedure code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-          - relationships:
-              description: Procedure modifier should be a valid code set
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_4
-                  - dqi
-                  - dqi_quality_measures
-              arguments:
-                to: ref('terminology__hcpcs_level_2')
-                field: hcpcs
+        description: Third procedure code modifier, when applicable.
         config:
           meta:
             data_type: varchar
       - name: modifier_4
-        description: Fourth modifier for the procedure code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-          - relationships:
-              description: Procedure modifier should be a valid code set
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_4
-                  - dqi
-                  - dqi_quality_measures
-              arguments:
-                to: ref('terminology__hcpcs_level_2')
-                field: hcpcs
+        description: Fourth procedure code modifier, when applicable.
         config:
           meta:
             data_type: varchar
       - name: modifier_5
-        description: Fifth modifier for the procedure code.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_quality_measures
-          - relationships:
-              description: Procedure modifier should be a valid code set
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_4
-                  - dqi
-                  - dqi_quality_measures
-              arguments:
-                to: ref('terminology__hcpcs_level_2')
-                field: hcpcs
+        description: Fifth procedure code modifier, when applicable.
         config:
           meta:
             data_type: varchar
       - name: practitioner_id
-        description: Unique identifier for the practitioner on record (e.g., ordered medication, performed the procedure, etc).
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
-        config:
-          meta:
-            data_type: varchar
-      - name: data_source
-        description: User-configured field that indicates the data source.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-                  - dqi_cms_chronic_conditions
-          - the_tuva_project.warn_if_null_percentage_is_100:
-              description: Percentage of values that are null.
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_5
-                  - dqi
-                  - dqi_cms_chronic_conditions
-        config:
-          meta:
-            data_type: varchar
-            is_primary_key: true
-      - name: file_name
-        description: The file name of the source file.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
+        description: Source-system practitioner identifier for the clinician associated with the procedure.
         config:
           meta:
             data_type: varchar
       - name: ingest_datetime
-        description: The date and time the source file was ingested into the data warehouse or landed in cloud storage.
-        tests:
-          - the_tuva_project.expect_column_to_exist:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_1
-                  - dqi
-          - the_tuva_project.expect_column_values_to_be_in_type_list:
-              config:
-                severity: warn
-                enabled: '{{ var(''enable_input_layer_testing'', true) | as_bool }}'
-                tags:
-                  - tuva_dqi_sev_2
-                  - dqi
-              arguments:
-                column_type_list:
-                  - date
-                  - datetime
-                  - time
-                  - timestamp
-                  - timestamp_ntz
-                  - timestampntz
-                  - timestamp_ltz
-                  - timestampltz
-                  - timestamp_tz
-                  - timestamptz
-                  - timestamp with time zone
-                  - timestamp without time zone
-                  - datetime2
-                  - datetimeoffset
+        description: Date and time the record was ingested or refreshed.
         config:
           meta:
             data_type: timestamp
+      - name: data_source
+        description: User-configured source system identifier, such as Epic, Athena Health, or Cerner. This field is part of the primary key with source_procedure_id.
+        config:
+          meta:
+            data_type: varchar
+            is_primary_key: true

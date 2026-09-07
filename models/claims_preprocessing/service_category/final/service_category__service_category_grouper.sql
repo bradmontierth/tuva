@@ -1,7 +1,9 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled',var('claims_enabled',var('tuva_marts_enabled',False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
+
+{% set service_category_string_type = 'varchar(256)' if target.type == 'redshift' else dbt.type_string() %}
 
 with service_category_1_mapping as (
     select distinct
@@ -99,6 +101,24 @@ with service_category_1_mapping as (
       and b.service_category_2 = s.service_category_2
       and b.service_category_3 = s.service_category_3
     where a.claim_type = 'institutional'
+
+    union all
+
+    select distinct
+        a.claim_id
+        , a.claim_line_number
+        , a.data_source
+        , a.claim_type
+        , cast(null as {{ service_category_string_type }}) as service_category_1
+        , cast(null as {{ service_category_string_type }}) as service_category_2
+        , cast(null as {{ service_category_string_type }}) as service_category_3
+        , cast(null as {{ service_category_string_type }}) as original_service_cat_2
+        , cast(null as {{ service_category_string_type }}) as original_service_cat_3
+        , cast(null as {{ dbt.type_int() }}) as priority
+        , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
+        , cast(null as {{ service_category_string_type }}) as source_model_name
+    from {{ ref('service_category__stg_medical_claim') }} as a
+    where a.claim_type = 'undetermined'
 )
 
 , service_category_2_deduplication as (
@@ -113,7 +133,7 @@ with service_category_1_mapping as (
         , original_service_cat_2
         , original_service_cat_3
         , source_model_name
-        , row_number() over (partition by claim_id, claim_line_number
+        , row_number() over (partition by claim_id, claim_line_number, data_source
 order by coalesce(priority, 99999)) as duplicate_row_number
     from service_category_1_mapping
 )

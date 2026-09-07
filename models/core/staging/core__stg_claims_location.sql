@@ -1,57 +1,52 @@
 
 {{ config(
-     enabled = var('claims_enabled',var('tuva_marts_enabled',False))
- | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
 with all_providers_in_claims_dataset as (
-select distinct facility_id as npi
-from {{ ref('core__stg_claims_medical_claim') }}
+select distinct
+    facility_npi as npi
+    , data_source
+from {{ ref('core__medical_claim') }}
 
-{% if target.type == 'fabric' %}
-union
-{% else %}
-union distinct
-{% endif %}
+{{ the_tuva_project.union_distinct() }}
 
-select distinct rendering_id as npi
-from {{ ref('core__stg_claims_medical_claim') }}
+select distinct
+    rendering_npi as npi
+    , data_source
+from {{ ref('core__medical_claim') }}
 
-{% if target.type == 'fabric' %}
-union
-{% else %}
-union distinct
-{% endif %}
+{{ the_tuva_project.union_distinct() }}
 
-select distinct billing_id as npi
-from {{ ref('core__stg_claims_medical_claim') }}
+select distinct
+    billing_npi as npi
+    , data_source
+from {{ ref('core__medical_claim') }}
 
-{% if target.type == 'fabric' %}
-union
-{% else %}
-union distinct
-{% endif %}
+{{ the_tuva_project.union_distinct() }}
 
-select distinct prescribing_provider_id as npi
-from {{ ref('core__stg_claims_pharmacy_claim') }}
+select distinct
+    prescribing_provider_id as npi
+    , data_source
+from {{ ref('core__pharmacy_claim') }}
 
-{% if target.type == 'fabric' %}
-union
-{% else %}
-union distinct
-{% endif %}
+{{ the_tuva_project.union_distinct() }}
 
-select distinct dispensing_provider_id as npi
-from {{ ref('core__stg_claims_pharmacy_claim') }}
+select distinct
+    dispensing_provider_id as npi
+    , data_source
+from {{ ref('core__pharmacy_claim') }}
 )
 
 
 , provider as (
-select aa.*
-from {{ ref('terminology__provider') }} as aa
+select
+    aa.*
+    , bb.data_source
+from {{ ref('provider_data__provider') }} as aa
 inner join all_providers_in_claims_dataset as bb
-on aa.npi = bb.npi
+    on aa.npi = bb.npi
 where lower(aa.entity_type_description) = 'organization'
 )
 
@@ -67,8 +62,9 @@ select
     , cast(practice_city as {{ dbt.type_string() }}) as city
     , cast(practice_state as {{ dbt.type_string() }}) as state
     , cast(practice_zip_code as {{ dbt.type_string() }}) as zip_code
-    , cast(null as {{ dbt.type_float() }}) as latitude
-    , cast(null as {{ dbt.type_float() }}) as longitude
-    , cast(null as {{ dbt.type_string() }}) as data_source
+    , cast(null as {{ dbt.type_numeric() }}) as latitude
+    , cast(null as {{ dbt.type_numeric() }}) as longitude
+    , cast(null as {{ dbt.type_timestamp() }}) as ingest_datetime
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
+    , cast(data_source as {{ dbt.type_string() }}) as data_source
 from provider

@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled', var('claims_enabled', var('tuva_marts_enabled', False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 with encounter_date as (
@@ -60,8 +60,8 @@ select distinct old_encounter_id
     , stg.claim_type
     , stg.diagnosis_code_1
     , stg.diagnosis_code_type
-    , stg.facility_id
-    , stg.billing_id
+    , stg.facility_npi
+    , stg.billing_npi
     , stg.hcpcs_code
     , stg.ccs_category
     , stg.ccs_category_description
@@ -79,6 +79,8 @@ order by stg.claim_type, stg.start_date) as encounter_row_number --institutional
     inner join {{ ref('encounters__combined_claim_line_crosswalk') }} as cli on stg.claim_id = cli.claim_id
     and
     stg.claim_line_number = cli.claim_line_number
+    and
+    stg.data_source = cli.data_source
     and
     cli.encounter_group = 'office based'
     and

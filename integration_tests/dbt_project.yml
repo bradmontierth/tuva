@@ -5,99 +5,167 @@ config-version: 2
 profile: default
 
 vars:
-  ## Passthrough Columns Configuration
-  # Allows custom columns with a prefix to flow through Tuva models to core outputs.
+  # This is the canonical commented inventory for Tuva Core variables. Keep
+  # every public, integration-only, warehouse-specific, and internal test var
+  # documented here when its lookup is added or changed.
+  # Every Core boolean below must be a native, unquoted YAML boolean.
+
+  ## Tuva Core variables
+
+  ## Domain enablement
+  # These vars default to false in Tuva Core when omitted.
+  # Integration tests set them true so local and CI builds exercise the full Tuva Core path.
+  claims_enabled: true                 # Enables payer/claims input layer, normalization, claims preprocessing, and claims-derived core tables.
+  clinical_enabled: true               # Enables provider/clinical input layer, normalization, and clinical-derived core tables.
+  provider_attribution_enabled: true   # Enables provider attribution input and claims preprocessing attribution. Requires claims_enabled.
+
+  ## Parity
+  # Enables maintainer release-comparison metrics when claims are also enabled.
+  parity_enabled: false                # Normal development and CI default.
+
+  ## Data quality
+  # Enables Structural Data Quality and Logical Data Quality models.
+  # Production projects can leave this false/omitted unless they want to build these queryable result tables.
+  data_quality_enabled: false           # Keeps optional data-quality result models out of this compatibility run.
+  # Requires data_quality_enabled and at least one of claims_enabled or clinical_enabled.
+  enable_data_quality_failure_keys: false  # Adds the optional key-only Logical failure drilldown table.
+
+  ## Medication terminology
+  # False uses the package's CodeRx Open assets. True requires user-managed
+  # packages, drugs, and classes relations in the target database's coderx schema.
+  use_coderx_enterprise: false
+
+  ## Synthetic data validation
+  # This integration project always maps package synthetic seeds into its Input Layer models.
+  # The var is not needed in production projects that map their own source data.
+  synthetic_data_size: small           # Selects the small or large payload; Core's loader fallback is large.
+
+  ## Data assets
+  # Package code and data-asset versions are independent and manually coordinated.
+  tuva_core_data_asset_version: '1.0.0' # Loads tuva-core/1.0.0/.
+  custom_bucket_name: tuva-public-resources  # Default public bucket for package data assets.
+
+  ## Schema naming
+  # Optional prefix for output schemas, e.g. dev_aaron_core, dev_aaron_input_layer.
+  # tuva_schema_prefix: dev_aaron
+
+  ## Run metadata
+  # Root package default is the dbt run_started_at timestamp in UTC.
+  # Uncomment to force a fixed value in the tuva_last_run column.
+  # tuva_last_run: "2026-01-01 00:00:00"
+
+  ## Extension columns
+  # Allows prefixed custom columns to flow from a supported Input Layer model
+  # to the same-named Core table. Derived outputs such as member_month are excluded.
   # passthrough:
-  #   prefix: 'x_'    # Prefix to identify passthrough columns (default: 'x_')
-  #   strip: false    # Whether to strip prefix in final output (default: false)
+  #   prefix: 'x_'                     # Prefix used to identify extension columns.
+  #   strip: false                     # Whether to strip the prefix in final output aliases.
 
-  error_empty_seeds: true
-  ## Use this variable to run the project with synthetic data loaded as seeds
-  # otherwise set to false and set the input vars below
-  use_synthetic_data: true
+  ## Provider attribution
+  # Optional current-panel as-of date override for provider ranking and current assignments.
+  # When omitted, each source uses its latest claim end date capped at the current date.
+  # provider_attribution_as_of_date: "2026-01-01"
 
+  ## Warehouse-specific seed loading
+  # Microsoft Fabric public storage endpoint used by seed loading macros.
+  # tuva_seed_fabric_storage_root: "https://tuvapublicresources.blob.core.windows.net"
+  # SQL Server seed source. Accepts an https blob endpoint (the default public
+  # mirror) or a local filesystem root readable by the database engine.
+  # tuva_seed_sqlserver_storage_root: "https://tuvapublicresources.blob.core.windows.net"
 
-  ## Update these vars to use your own data as input, do not comment out
-  # enabled logic has been added to the sources config
-  input_database: dev_ci_testing
-  input_schema: input_layer
+  ## Data quality internals
+  # Number of part models the Logical Data Quality failure-key and result
+  # relations are split across. Each part is one slice of the test manifest,
+  # kept small enough that the generated statement stays inside Athena's
+  # 262,144-byte query-string limit. Raise it if the manifest grows.
+  # dq_logical_chunk_count: 4
 
-  ## The Tuva Project can support claims and clinical data.
-  # By default, all models are disabled.
-  # Use the vars below to enabled or disable sections of The Tuva Project.
+  ## Internal test hooks
+  # Local filesystem root for validating staged package data assets with DuckDB.
+  # The root must contain <bucket>/<package>/<version>/...; omit in normal projects.
+  # tuva_seed_duckdb_storage_root: "/tmp/tuva-data-assets"
+  # Internal dbt unit-test hook for extension-column tests; do not set in normal projects.
+  # _extension_columns_override: []
+  # Internal dbt unit-test hook for the shared columns used by smart_union.
+  # _smart_union_columns_override: []
+  # Internal dbt unit-test hook for the medical-claim procedure positions to expand.
+  # The normal default is every position from 1 through 25.
+  # _medical_claim_procedure_cols_override: [1]
 
-  ## The vars directly below enable all models related to the type of healthcare data being used
-  clinical_enabled: true
-  claims_enabled: true
-  provider_attribution_enabled: true
-  semantic_layer_enabled: true
+  ## Standalone package variables
+  # Importing a standalone package enables it. These vars change package behavior;
+  # none is a package-level on/off switch.
+  ccsr:
+    wide_condition_enabled: true       # Includes the optional wide condition-category output.
+    wide_procedure_enabled: true       # Includes the optional wide procedure-category output.
+    record_type: ip                    # Category logic: ip (inpatient) or op (outpatient).
+    dxccsr_version: "'2023.1'"         # HCUP diagnosis CCSR version stored in package outputs.
+    prccsr_version: "'2023.1'"         # HCUP procedure CCSR version stored in package outputs.
 
+  cms_chronic_conditions:
+    # Optional package-specific relation overrides. Null uses the corresponding Tuva Core ref.
+    cms_chronic_conditions_pharmacy_claim_override: null
+    cms_chronic_conditions_encounter_override: null
+    cms_chronic_conditions_condition_override: null
+    cms_chronic_conditions_procedure_override: null
+    cms_chronic_conditions_patient_override: null
+    # Backward-compatible Core relation override names used as secondary fallbacks.
+    core_pharmacy_claim_override: null
+    core_encounter_override: null
+    core_condition_override: null
+    core_procedure_override: null
+    core_patient_override: null
+    # Optional output location overrides. Omitted values use target.database and
+    # <tuva_schema_prefix>_chronic_conditions (or chronic_conditions without a prefix).
+    # cms_chronic_conditions_database: analytics
+    # cms_chronic_conditions_schema: chronic_conditions
+    # tuva_database: analytics          # Legacy shared database fallback.
 
-  ## CMS HCC data mart vars
-  # The payment_year variable has a default of the current year, this can be
-  # changed by adding the numeric value of a year (ex: cms_hcc_payment_year: 2019)
-  # cms_hcc_payment_year: 2018
+  cms_hcc:
+    cms_hcc_payment_year: 2018         # Matches the shipped small synthetic dataset.
+    hcc_recapture_chronic_hccs: false  # False uses package-owned chronic-HCC definitions; true uses chronic_hccs.
+    hcc_recapture_suspect_list: false  # True additionally requires a user-supplied suspect_hccs relation.
 
-
-  ## Quality Measures period var
-  # to run quality measueres for a period other than current year, add the below variable uncommented to your project
-  # quality_measures_period_end: "2018-12-31"
-
-  ## The vars directly below enable a single data mart.  See the Quickstart
-  # guide for instructions.
-
-  # ccsr_enabled: false
-  # cms_chronic_conditions_enabled: false
-  # tuva_chronic_conditions_enabled: false
-  # claims_preprocessing_enabled: false
-  # cms_hcc_enabled: false
-  # ed_classification_enabled: false
-  # financial_pmpm_enabled: false
-  # insights_enabled: false
-  # quality_measures_enabled: false
-  # readmissions_enabled: true
-  # fhir_preprocessing_enabled: true # defaults to false
+  quality_measures:
+    quality_measures_period_end: "2018-12-31"  # Matches the shipped small synthetic dataset.
 
 
 model-paths: ["models"]
-analysis-paths: ["analyses"]
 test-paths: ["tests"]
-seed-paths: ["seeds"]
 macro-paths: ["macros"]
-snapshot-paths: ["snapshots"]
 clean-targets:
   - "target"
   - "dbt_packages"
 
+on-run-start:
+  - "{{ ensure_target_schema_for_unit_tests() }}"
+
 
 dispatch:
+  - macro_namespace: 'dbt'
+    search_order: ['integration_tests', 'dbt']
   - macro_namespace: 'the_tuva_project'
     search_order: ['integration_tests', 'the_tuva_project']
-
-
-seeds:
-  integration_tests:
-    appointment_seed:
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.15.0','appointment.csv',headers=true) }}"
-    eligibility_seed:
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.16.0','eligibility.csv',headers=true) }}"
-    immunization_seed:
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.15.0','immunization.csv',headers=true) }}"
-    lab_result_seed:
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.15.0','lab_result.csv',headers=true) }}"
-    medical_claim_seed:
-      +batch_size: 200
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.15.0','medical_claim.csv',headers=true) }}"
-    observation_seed:
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.15.0','observation.csv',headers=true) }}"
-    pharmacy_claim_seed:
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.15.0','pharmacy_claim.csv',headers=true) }}"
-    provider_attribution_seed:
-      # +post-hook: "{{ the_tuva_project.load_seed('tuva-public-resources/versioned_ci_testing_data/0.15.0','provider_attribution.csv',headers=true) }}"
+  - macro_namespace: 'dbt_utils'
+    search_order: ['integration_tests', 'the_tuva_project', 'dbt_utils']
 
 
 models:
   integration_tests:
-    +materialized: ephemeral
+    +materialized: table
+    +schema: |
+      {%- if var('tuva_schema_prefix', none) is not none and var('tuva_schema_prefix', none) | trim != '' -%}{{ var('tuva_schema_prefix') }}_input_layer{%- else -%}input_layer{%- endif -%}
+  ccsr:
+    +schema: |
+      {%- if var('tuva_schema_prefix', none) is not none and var('tuva_schema_prefix', none) | trim != '' -%}{{ var('tuva_schema_prefix') }}_ccsr{%- else -%}ccsr{%- endif -%}
+  semantic_layer:
+    +schema: |
+      {%- if var('tuva_schema_prefix', none) is not none and var('tuva_schema_prefix', none) | trim != '' -%}{{ var('tuva_schema_prefix') }}_semantic_layer{%- else -%}semantic_layer{%- endif -%}
+
+seeds:
+  ccsr:
+    +schema: |
+      {%- if var('tuva_schema_prefix', none) is not none and var('tuva_schema_prefix', none) | trim != '' -%}{{ var('tuva_schema_prefix') }}_ccsr{%- else -%}ccsr{%- endif -%}
 flags:
   require_generic_test_arguments_property: true
+  require_ref_searches_node_package_before_root: true

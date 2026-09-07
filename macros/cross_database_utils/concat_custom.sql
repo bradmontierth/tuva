@@ -2,11 +2,11 @@
     Custom concat macro that casts all fields to varchar before concatenating
 #}
 {% macro concat_custom(fields) -%}
-    {{ return(adapter.dispatch('concat_custom')(fields)) }}
+    {{ return(adapter.dispatch('concat_custom', 'the_tuva_project')(fields)) }}
 {%- endmacro %}
 
 {% macro default__concat_custom(fields) -%}
-    {{ return(dbt.concat(fields)) }}
+    {{ return('(' ~ dbt.concat(fields) ~ ')') }}
 {%- endmacro %}
 
 {% macro athena__concat_custom(fields) %}

@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled', var('claims_enabled', var('tuva_marts_enabled', False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -19,7 +19,7 @@ with claim_start_end as (
     , enc.patient_data_source_id
     , c.start_date
     , c.end_date
-    , enc.facility_id
+    , enc.facility_npi
     , enc.discharge_disposition_code
     , enc.claim_type  -- 'institutional' | 'professional'
   from {{ ref('encounters__stg_medical_claim') }} as enc
@@ -36,10 +36,10 @@ with claim_start_end as (
     , start_date
     , end_date
     , discharge_disposition_code
-    , facility_id
+    , facility_npi
     , claim_type
     , case when claim_type = 'professional' then 1 else 0 end as is_professional
-    , row_number() over (
+    , rank() over (
         partition by patient_data_source_id
         order by end_date, start_date, claim_id
       ) as row_num
@@ -56,17 +56,17 @@ with claim_start_end as (
     , case
         -- 1) exact end-date match at the same facility (dups/corrections)
         when aa.end_date = bb.end_date
-         and aa.facility_id = bb.facility_id then 1
+         and aa.facility_npi = bb.facility_npi then 1
 
         -- 2) consecutive stay with transfer (end_date + 1 day == next start_date and discharge '30')
         when {{ dbt.dateadd(datepart='day', interval=1, from_date_or_timestamp='aa.end_date') }} = bb.start_date
-         and aa.facility_id = bb.facility_id
+         and aa.facility_npi = bb.facility_npi
          and aa.discharge_disposition_code = '30' then 1
 
         -- 3) general overlap at the same facility
         when aa.end_date <> bb.end_date
          and aa.end_date >= bb.start_date
-         and aa.facility_id = bb.facility_id then 1
+         and aa.facility_npi = bb.facility_npi then 1
 
         -- 4) liberal rule when at least one is PROFESSIONAL:
         -- overlap OR 1-day gap; ignore facility/discharge as professional doesn't have these fields.
@@ -98,13 +98,15 @@ with claim_start_end as (
 
 , claim_ids_that_merge_with_larger_row_num as (
   select distinct
-      claim_id_a as claim_id
+      patient_data_source_id
+    , claim_id_a as claim_id
   from merges_with_larger_row_num
 )
 
 , claim_ids_having_a_smaller_row_num_merging_with_a_larger_row_num as (
   select distinct
-      aa.claim_id as claim_id
+      aa.patient_data_source_id
+    , aa.claim_id as claim_id
   from add_row_num as aa
   inner join merges_with_larger_row_num as bb
     on aa.patient_data_source_id = bb.patient_data_source_id
@@ -119,7 +121,7 @@ with claim_start_end as (
     , aa.start_date
     , aa.end_date
     , aa.discharge_disposition_code
-    , aa.facility_id
+    , aa.facility_npi
     , aa.row_num
     , case
         when bb.claim_id is null
@@ -128,9 +130,11 @@ with claim_start_end as (
       end as close_flag
   from add_row_num as aa
   left outer join claim_ids_that_merge_with_larger_row_num as bb
-    on aa.claim_id = bb.claim_id
+    on aa.patient_data_source_id = bb.patient_data_source_id
+    and aa.claim_id = bb.claim_id
   left outer join claim_ids_having_a_smaller_row_num_merging_with_a_larger_row_num as cc
-    on aa.claim_id = cc.claim_id
+    on aa.patient_data_source_id = cc.patient_data_source_id
+    and aa.claim_id = cc.claim_id
 )
 
 , join_every_row_to_later_closes as (
@@ -164,7 +168,7 @@ with claim_start_end as (
     , aa.start_date
     , aa.end_date
     , aa.discharge_disposition_code
-    , aa.facility_id
+    , aa.facility_npi
     , aa.row_num
     , aa.close_flag
     , bb.min_closing_row
@@ -181,7 +185,7 @@ with claim_start_end as (
     , aa.start_date
     , aa.end_date
     , aa.discharge_disposition_code
-    , aa.facility_id
+    , aa.facility_npi
     , aa.row_num
     , aa.close_flag
     , aa.min_closing_row

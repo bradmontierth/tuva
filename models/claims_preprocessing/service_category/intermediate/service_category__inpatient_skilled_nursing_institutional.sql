@@ -1,5 +1,5 @@
 {{ config(
-     enabled = var('claims_preprocessing_enabled',var('claims_enabled',var('tuva_marts_enabled',False))) | as_bool
+     enabled = the_tuva_project.tuva_boolean_var('claims_enabled', false)
    )
 }}
 
@@ -15,11 +15,7 @@ from {{ ref('service_category__stg_medical_claim') }}
 where claim_type = 'institutional'
   and substring(bill_type_code, 1, 2) in ('21')
 
-{% if target.type == 'fabric' %}
-union
-{% else %}
-union distinct
-{% endif %}
+{{ the_tuva_project.union_distinct() }}
 
 select distinct
   claim_id
